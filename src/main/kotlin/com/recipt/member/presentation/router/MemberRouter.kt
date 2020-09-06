@@ -16,13 +16,12 @@ class MemberRouter (
     @Bean
     fun memberRoute(): RouterFunction<ServerResponse> {
         return coRouter {
-            "/member".nest {
+            "/members".nest {
                 accept(MediaType.APPLICATION_JSON).nest {
                     POST("", memberHandler::signUp)
 
                     "/profile".nest {
                         GET("/{memberNo}", memberHandler::getProfile)
-                        GET("/following", memberHandler::getFollowingProfileList)
 
                         "/me".nest {
                             GET("", memberHandler::getMyProfile)
@@ -31,7 +30,8 @@ class MemberRouter (
                     }
 
                     "/following".nest {
-                        GET("/{memberNo}", memberHandler::checkFollowing)
+                        GET("", memberHandler::getFollowingProfileList)
+                        GET("/check/{memberNo}", memberHandler::checkFollowing)
                         POST("", memberHandler::follow)
                         DELETE("", memberHandler::unfollow)
                     }
