@@ -10,6 +10,6 @@ spring:
 
   jpa:
     show-sql: true
-    generate-ddl: true
+    generate-ddl: false
     database: mysql
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect

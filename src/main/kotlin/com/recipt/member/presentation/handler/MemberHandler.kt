@@ -1,6 +1,7 @@
 package com.recipt.member.presentation.handler
 
 import com.recipt.member.application.member.MemberQueryService
+import com.recipt.member.presentation.pathVariableToPositiveIntOrThrow
 import com.recipt.member.presentation.queryParamToPositiveIntOrThrow
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -14,7 +15,7 @@ class MemberHandler (
 ) {
 
     suspend fun getProfile(request: ServerRequest): ServerResponse {
-        val memberNo = request.queryParamToPositiveIntOrThrow("memberNo")
+        val memberNo = request.pathVariableToPositiveIntOrThrow("memberNo")
 
         return ok().bodyValueAndAwait(memberQueryService.getProfile(memberNo))
     }
