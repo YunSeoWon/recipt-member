@@ -25,6 +25,9 @@ var snippetsDir = file("build/generated-snippets")
 var outputDir = file("build/asciidoc")
 var docDir = file("src/main/resources/static/docs")
 
+ext["spring-security.version"] = "5.3.4.RELEASE"
+ext["spring.version"] = "5.2.8.RELEASE"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -35,8 +38,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
     // Spring Security
-    //implementation("org.springframework.boot:spring-boot-starter-security")
-    //implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity5")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+
+    // validator
+    implementation("org.springframework.boot:spring-boot-starter-validation")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("mysql:mysql-connector-java")
@@ -47,6 +52,7 @@ dependencies {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     testImplementation("io.projectreactor:reactor-test")
+    testImplementation("org.springframework.security:spring-security-test")
     asciidoctor("org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.3.RELEASE")
     testImplementation("org.springframework.restdocs:spring-restdocs-webtestclient:2.0.3.RELEASE")
     testImplementation("io.mockk:mockk:1.9.3")

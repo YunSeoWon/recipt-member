@@ -6,3 +6,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 
 @ResponseStatus(code = HttpStatus.NOT_FOUND)
 class MemberNotFoundException: ReciptException(MemberErrorCode.NOT_FOUND)
+
+@ResponseStatus(code = HttpStatus.BAD_REQUEST)
+class DuplicatedMemberException(something: String): ReciptException(MemberErrorCode.DUPLICATED, something)

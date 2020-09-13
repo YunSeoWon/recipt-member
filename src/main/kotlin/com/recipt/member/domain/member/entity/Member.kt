@@ -1,5 +1,6 @@
 package com.recipt.member.domain.member.entity
 
+import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.domain.converter.MemberStatusConverter
 import com.recipt.member.domain.member.enum.MemberStatus
 import javax.persistence.*
@@ -29,4 +30,13 @@ data class Member(
 
     @Convert(converter = MemberStatusConverter::class)
     val memberStatus: MemberStatus = MemberStatus.ACTIVE
-)
+) {
+    companion object {
+        fun create(command: SignUpCommand) = Member(
+            email = command.email,
+            nickname = command.nickname,
+            password = command.password,
+            mobileNo = command.mobileNo
+        )
+    }
+}

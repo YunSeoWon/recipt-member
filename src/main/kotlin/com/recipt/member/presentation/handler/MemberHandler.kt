@@ -1,18 +1,29 @@
 package com.recipt.member.presentation.handler
 
+import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
+import com.recipt.member.presentation.exception.request.RequestBodyExtractFailedException
+import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.pathVariableToPositiveIntOrThrow
-import com.recipt.member.presentation.queryParamToPositiveIntOrThrow
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.reactive.function.server.ServerResponse
+import org.springframework.web.reactive.function.server.*
+import org.springframework.web.reactive.function.server.ServerResponse.created
 import org.springframework.web.reactive.function.server.ServerResponse.ok
-import org.springframework.web.reactive.function.server.bodyValueAndAwait
+import java.net.URI
+import javax.validation.Validator
 
 @Component
 class MemberHandler (
-    private val memberQueryService: MemberQueryService
+    private val memberQueryService: MemberQueryService,
+    private val memberCommandService: MemberCommandService,
+    private val validator: Validator,
+    private val passwordEncoder: PasswordEncoder
 ) {
+
+    companion object {
+        private val REDIRECTION_URL = URI("https://www.naver.com")  // TODO: Front가 만들어지면 새로 넣기
+    }
 
     suspend fun getProfile(request: ServerRequest): ServerResponse {
         val memberNo = request.pathVariableToPositiveIntOrThrow("memberNo")
@@ -27,18 +38,23 @@ class MemberHandler (
     }
 
     suspend fun getFollowingProfileList(request: ServerRequest): ServerResponse {
-        // TODO
+        // TODO 인증 토큰을 만들어야..
         return ok().bodyValueAndAwait("")
     }
 
     suspend fun modifyMyProfile(request: ServerRequest): ServerResponse {
-        // TODO
+        // TODO 인증 토큰을 만들어야..
         return ok().bodyValueAndAwait("")
     }
 
     suspend fun signUp(request: ServerRequest): ServerResponse {
-        // TODO
-        return ok().bodyValueAndAwait("")
+        val signUpRequest = request.awaitBodyOrNull<SignUpRequest>()
+            ?.also { validator.validate(it) }
+            ?: throw RequestBodyExtractFailedException()
+
+        memberCommandService.signUp(signUpRequest.toCommand(passwordEncoder))
+
+        return created(REDIRECTION_URL).buildAndAwait()
     }
 
     suspend fun checkFollowing(request: ServerRequest): ServerResponse {

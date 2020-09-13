@@ -7,3 +7,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 @ResponseStatus(code = HttpStatus.BAD_REQUEST)
 class InvalidParameterException(val parameterName: String):
     ReciptException(RequestErrorCode.INVALID_PARAMETER, parameterName)
+
+@ResponseStatus(code = HttpStatus.BAD_REQUEST)
+class RequestBodyExtractFailedException:
+    ReciptException(RequestErrorCode.BODY_EXTRACT_FAIL)
