@@ -2,14 +2,22 @@ package com.recipt.member.presentation.router
 
 import com.ninjasquad.springmockk.MockkBean
 import com.recipt.member.application.authentication.AuthenticationService
+import com.recipt.member.application.authentication.dto.TokenCreateCommand
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
+import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.member.application.member.dto.SignUpCommand
+import com.recipt.member.presentation.ReciptHeaders.AUTH_TOKEN
+import com.recipt.member.presentation.ReciptHeaders.TEST_AUTH_TOKEN
 import com.recipt.member.presentation.handler.MemberHandler
+import com.recipt.member.presentation.model.MemberInfo
+import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
+import com.recipt.member.presentation.model.response.TokenResponse
 import com.recipt.member.presentation.support.TestSecurityConfig
 import com.recipt.member.presentation.toDocument
+import com.recipt.member.presentation.tokenHeader
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
@@ -22,6 +30,7 @@ import org.springframework.context.ApplicationContext
 import org.springframework.http.MediaType
 import org.springframework.restdocs.RestDocumentationContextProvider
 import org.springframework.restdocs.RestDocumentationExtension
+import org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders
 import org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.*
@@ -100,16 +109,7 @@ internal class MemberRouterTest {
                     pathParameters(
                        parameterWithName("memberNo").description("회원 번호")
                     ),
-                    responseFields(
-                        fieldWithPath("nickname").type(JsonFieldType.STRING)
-                            .description("닉네임"),
-                        fieldWithPath("introduction").type(JsonFieldType.STRING)
-                            .description("회원 소개 글"),
-                        fieldWithPath("followerCount").type(JsonFieldType.NUMBER)
-                            .description("팔로워 수"),
-                        fieldWithPath("totalRecipeReadCount").type(JsonFieldType.NUMBER)
-                            .description("회원이 쓴 레시피 총 조회 수")
-                    )
+                    responseFields(*summary.toDocument())
                 )
             )
     }
@@ -136,6 +136,63 @@ internal class MemberRouterTest {
                 document(
                     "signup",
                     requestFields(*request.toDocument())
+                )
+            )
+    }
+
+    @Test
+    fun `토큰 발급`() {
+        val request = LogInRequest(
+            email = "email@email.com",
+            password = "password1234!"
+        )
+
+        val response = TokenResponse(
+            token = "token"
+        )
+
+        coEvery { authenticationService.getToken(any<TokenCreateCommand>()) } returns response.token
+
+        webTestClient.post()
+            .uri("/members/token")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(request)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().consumeWith(
+                document(
+                    "issue-token",
+                    requestFields(*request.toDocument()),
+                    responseFields(*response.toDocument())
+                )
+            )
+    }
+
+    @Test
+    fun `내 프로필 조회`() {
+        val response = MyProfile(
+            email = "email@email.com",
+            nickname = "nickname",
+            introduction = "intro",
+            mobileNo = "010-1234-5678",
+            followerCount = 1,
+            totalRecipeReadCount = 1
+        )
+
+        coEvery { memberQueryService.getMyProfile(MemberInfo.TEST_MEMBER_INFO.no) } returns response
+
+        webTestClient.get()
+            .uri("/members/profiles/me")
+            .accept(MediaType.APPLICATION_JSON)
+            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().consumeWith(
+                document(
+                    "get-my-profile",
+                    requestHeaders(*tokenHeader),
+                    responseFields(*response.toDocument())
                 )
             )
     }

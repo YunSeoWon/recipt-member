@@ -1,6 +1,7 @@
 package com.recipt.member.application
 
 import com.recipt.member.application.member.MemberQueryService
+import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.MemberRepository
@@ -24,9 +25,11 @@ class MemberQueryServiceTest {
 
     private lateinit var memberQueryService: MemberQueryService
 
+    private val _email = "email@email.com"
     private val _nickname = "테스터"
     private val _introduction = "테스터입니다"
     private val _followerCount = 0
+    private val _mobileNo = "010-1234-5678"
 
     @BeforeEach
     fun setUp() {
@@ -50,7 +53,7 @@ class MemberQueryServiceTest {
         )
 
         every { memberRepository.findByIdOrNull(memberNo) } returns member
-        every { memberRepository.findByIdOrNull(notExistMemberNo) } returns null
+        every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
 
         val result = runBlocking { memberQueryService.getProfile(memberNo) }
 
@@ -59,5 +62,36 @@ class MemberQueryServiceTest {
         }
 
         assertEquals(expected, result)
+    }
+
+    @Test
+    fun `자신의 프로필 조회`() {
+        val memberNo = 1
+        val member = mockk<Member> {
+            every { email } returns _email
+            every { nickname } returns _nickname
+            every { introduction } returns _introduction
+            every { followerCount } returns _followerCount
+            every { mobileNo } returns _mobileNo
+        }
+        val expected = MyProfile(
+            email = _email,
+            nickname = _nickname,
+            introduction = _introduction,
+            mobileNo = _mobileNo,
+            followerCount = _followerCount,
+            totalRecipeReadCount = 0
+        )
+
+        every { memberRepository.findByIdOrNull(memberNo) } returns member
+        every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
+
+        val result = runBlocking { memberQueryService.getMyProfile(memberNo) }
+
+        assertEquals(expected, result)
+
+        assertThrows<MemberNotFoundException> {
+            runBlocking { memberQueryService.getMyProfile(memberNo + 1) }
+        }
     }
 }

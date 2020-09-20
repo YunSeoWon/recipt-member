@@ -8,4 +8,12 @@ data class MemberInfo (
     val nickname: String
 ) {
     constructor(member: Member): this(member.email, member.no, member.nickname)
+
+    companion object {
+        val TEST_MEMBER_INFO = MemberInfo(
+            email = "email@email.com",
+            no = 0,
+            nickname = "nickname"
+        )
+    }
 }
