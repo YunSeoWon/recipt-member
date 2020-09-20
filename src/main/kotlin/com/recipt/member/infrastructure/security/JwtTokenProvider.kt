@@ -2,7 +2,11 @@ package com.recipt.member.infrastructure.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.recipt.member.domain.member.entity.Member
+import com.recipt.member.domain.member.enum.MemberRole
+import com.recipt.member.infrastructure.properties.JwtTokenProperties
+import com.recipt.member.presentation.ReciptAttributes.MEMBER_INFO
 import com.recipt.member.presentation.model.MemberInfo
+import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import kotlinx.coroutines.reactive.awaitFirstOrNull
@@ -23,23 +27,16 @@ import java.util.*
  */
 @Component
 class JwtTokenProvider (
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val jwtTokenProperties: JwtTokenProperties
 ) {
-    // TODO: properties로 관리하자.
-    companion object {
-        private const val tokenValidTime = 30 * 60 * 1000L
-        private val SECRET_KEY = Base64.getEncoder().encodeToString("recipt".toByteArray())
-        private val algorithm = SignatureAlgorithm.HS256
-    }
 
-    fun getAllClaimsFromToken(token: String) = Jwts.parser()
-        .setSigningKey(SECRET_KEY)
+    fun getAllClaimsFromToken(token: String): Claims = Jwts.parser()
+        .setSigningKey(jwtTokenProperties.secretKey)
         .parseClaimsJws(token)
         .body
 
-    fun getUsernameFromToken(token: String) = getAllClaimsFromToken(token).subject
-
-    fun getExpirationDateFromToken(token: String) = getAllClaimsFromToken(token).expiration
+    private fun getExpirationDateFromToken(token: String) = getAllClaimsFromToken(token).expiration
 
     fun isTokenExpired(token: String) = getExpirationDateFromToken(token).before(Date())
 
@@ -47,8 +44,8 @@ class JwtTokenProvider (
         val memberInfo = MemberInfo(member)
         return doGenerateToken(
             claims = mutableMapOf(
-                "role" to listOf("ROLE_USER"),
-                "memberInfo" to objectMapper.writeValueAsString(memberInfo)
+                "role" to listOf(MemberRole.USER.role),
+                MEMBER_INFO to objectMapper.writeValueAsString(memberInfo)
             ),
             username = member.email
         )
@@ -57,16 +54,14 @@ class JwtTokenProvider (
 
     fun doGenerateToken(claims: MutableMap<String, Any>, username: String): String {
         val createDate = Date()
-        val expirationDate = Date(createDate.time + tokenValidTime)
+        val expirationDate = Date(createDate.time + jwtTokenProperties.validateTimeMili)
 
         return Jwts.builder()
             .setClaims(claims)
             .setSubject(username)
             .setIssuedAt(createDate)
             .setExpiration(expirationDate)
-            .signWith(algorithm, SECRET_KEY)
+            .signWith(jwtTokenProperties.signatureAlgorithm, jwtTokenProperties.secretKey)
             .compact()
     }
-
-    fun validateToken(token: String) = !isTokenExpired(token)
 }

@@ -3,6 +3,7 @@ package com.recipt.member.presentation.handler
 import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
+import com.recipt.member.presentation.ReciptAttributes.MEMBER_INFO
 import com.recipt.member.presentation.exception.request.RequestBodyExtractFailedException
 import com.recipt.member.presentation.model.MemberInfo
 import com.recipt.member.presentation.model.request.LogInRequest
@@ -37,7 +38,7 @@ class MemberHandler (
     }
 
     suspend fun getMyProfile(request: ServerRequest): ServerResponse {
-        val memberInfo = request.attributeOrNull("memberInfo") as? MemberInfo
+        val memberInfo = request.attributeOrNull(MEMBER_INFO) as? MemberInfo
             ?: throw Exception()
 
         return ok().bodyValueAndAwait(memberQueryService.getMyProfile(memberInfo.no))

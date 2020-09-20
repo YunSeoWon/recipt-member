@@ -2,6 +2,7 @@ package com.recipt.member.presentation.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.recipt.member.infrastructure.security.JwtTokenProvider
+import com.recipt.member.presentation.ReciptAttributes.MEMBER_INFO
 import com.recipt.member.presentation.model.MemberInfo
 import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.ReactiveAuthenticationManager
@@ -31,7 +32,7 @@ class ReciptAuthenticationManager(
         return try {
             val claims = jwtTokenProvider.getAllClaimsFromToken(token)
             val roles = claims.get("role", List::class.java) as List<String>
-            val memberInfo = claims.get("memberInfo", String::class.java)
+            val memberInfo = claims.get(MEMBER_INFO, String::class.java)
                 .let { objectMapper.readValue(it, MemberInfo::class.java)}
 
             val authorities = roles.map { SimpleGrantedAuthority(it) }

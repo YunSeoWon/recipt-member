@@ -1,7 +1,7 @@
 package com.recipt.member.presentation.security
 
-import com.recipt.member.domain.member.repository.MemberRepository
-import com.recipt.member.presentation.model.MemberInfo
+import com.recipt.member.presentation.ReciptAttributes.MEMBER_INFO
+import com.recipt.member.presentation.ReciptHeaders.AUTH_TOKEN
 import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContext
@@ -19,11 +19,6 @@ import java.lang.UnsupportedOperationException
 class SecurityContextRepository(
     private val jwtAuthenticationManager: ReactiveAuthenticationManager
 ): ServerSecurityContextRepository {
-
-    companion object {
-        private const val AUTH_TOKEN = "reciptAccessToken"
-        private const val MEMBER_INFO = "memberInfo"
-    }
 
     override fun save(exchange: ServerWebExchange?, context: SecurityContext?): Mono<Void> {
         throw UnsupportedOperationException("Not supported yet.") // ??
