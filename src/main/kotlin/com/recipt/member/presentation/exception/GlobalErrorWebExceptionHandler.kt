@@ -1,7 +1,5 @@
 package com.recipt.member.presentation.exception
 
-import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.web.ResourceProperties
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler
 import org.springframework.boot.web.error.ErrorAttributeOptions

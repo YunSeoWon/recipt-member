@@ -20,13 +20,17 @@ class MemberRouter (
                 accept(MediaType.APPLICATION_JSON).nest {
                     POST("", memberHandler::signUp)
 
-                    "/profile".nest {
-                        GET("/{memberNo}", memberHandler::getProfile)
+                    "/token".nest {
+                        POST("", memberHandler::getToken)
+                    }
 
+                    "/profiles".nest {
                         "/me".nest {
                             GET("", memberHandler::getMyProfile)
                             PUT("", memberHandler::modifyMyProfile)
                         }
+
+                        GET("/{memberNo}", memberHandler::getProfile)
                     }
 
                     "/following".nest {

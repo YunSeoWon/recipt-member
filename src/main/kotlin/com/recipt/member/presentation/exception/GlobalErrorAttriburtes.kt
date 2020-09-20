@@ -35,6 +35,8 @@ class GlobalErrorAttributes(
         val error = getError(request)
         val errorStatus = determineHttpStatus(error)
 
+        logger.error("ERROR: " , error)
+
         val message = (error as? ReciptException)?.let {  messageSource.getMessage(it.errorCode.code, null, LOCALE) }
             ?: error.message?: "no message"
 

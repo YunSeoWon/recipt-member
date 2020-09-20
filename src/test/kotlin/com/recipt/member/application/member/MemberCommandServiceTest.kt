@@ -35,13 +35,13 @@ internal class MemberCommandServiceTest {
             mobileNo = "010-1234-5678"
         )
 
-        every { memberRepository.findTopByEmailOrNickname(command.email, command.nickname) } returns null
+        every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns null
         every { memberRepository.save(any<Member>()) } returns mockk()
 
         memberCommandService.signUp(command)
 
         verify(exactly = 1) {
-            memberRepository.findTopByEmailOrNickname(command.email, command.nickname)
+            memberRepository.findByEmailOrNickname(command.email, command.nickname)
             memberRepository.save(any<Member>())
         }
     }
@@ -59,13 +59,13 @@ internal class MemberCommandServiceTest {
             every { email } returns command.email
         }
 
-        every { memberRepository.findTopByEmailOrNickname(command.email, command.nickname) } returns existedMember
+        every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns existedMember
         every { memberRepository.save(any<Member>()) } returns mockk()
 
         assertThrows<DuplicatedMemberException> { memberCommandService.signUp(command) }
 
         verify(exactly = 1) {
-            memberRepository.findTopByEmailOrNickname(command.email, command.nickname)
+            memberRepository.findByEmailOrNickname(command.email, command.nickname)
         }
         verify(exactly = 0) {
             memberRepository.save(any<Member>())
@@ -86,13 +86,13 @@ internal class MemberCommandServiceTest {
             every { nickname } returns command.nickname
         }
 
-        every { memberRepository.findTopByEmailOrNickname(command.email, command.nickname) } returns existedMember
+        every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns existedMember
         every { memberRepository.save(any<Member>()) } returns mockk()
 
         assertThrows<DuplicatedMemberException> { memberCommandService.signUp(command) }
 
         verify(exactly = 1) {
-            memberRepository.findTopByEmailOrNickname(command.email, command.nickname)
+            memberRepository.findByEmailOrNickname(command.email, command.nickname)
         }
         verify(exactly = 0) {
             memberRepository.save(any<Member>())

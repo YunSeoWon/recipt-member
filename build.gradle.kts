@@ -31,17 +31,25 @@ ext["spring.version"] = "5.2.8.RELEASE"
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+
+    // jackson
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-hibernate5")
 
     // Spring Security
     implementation("org.springframework.boot:spring-boot-starter-security")
 
     // validator
     implementation("org.springframework.boot:spring-boot-starter-validation")
+
+    // jwt
+    implementation("io.jsonwebtoken:jjwt:0.9.1")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("mysql:mysql-connector-java")

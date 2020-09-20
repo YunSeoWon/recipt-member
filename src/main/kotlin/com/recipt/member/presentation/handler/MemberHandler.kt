@@ -1,9 +1,13 @@
 package com.recipt.member.presentation.handler
 
+import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
 import com.recipt.member.presentation.exception.request.RequestBodyExtractFailedException
+import com.recipt.member.presentation.model.MemberInfo
+import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
+import com.recipt.member.presentation.model.response.TokenResponse
 import com.recipt.member.presentation.pathVariableToPositiveIntOrThrow
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
@@ -18,7 +22,8 @@ class MemberHandler (
     private val memberQueryService: MemberQueryService,
     private val memberCommandService: MemberCommandService,
     private val validator: Validator,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val authenticationService: AuthenticationService
 ) {
 
     companion object {
@@ -32,9 +37,10 @@ class MemberHandler (
     }
 
     suspend fun getMyProfile(request: ServerRequest): ServerResponse {
-        // TODO: 인증 토큰을 만들어야..
+        val memberInfo = request.attributeOrNull("memberInfo") as? MemberInfo
+            ?: throw Exception()
 
-        return ok().bodyValueAndAwait("")
+        return ok().bodyValueAndAwait(memberQueryService.getMyProfile(memberInfo.no))
     }
 
     suspend fun getFollowingProfileList(request: ServerRequest): ServerResponse {
@@ -55,6 +61,16 @@ class MemberHandler (
         memberCommandService.signUp(signUpRequest.toCommand(passwordEncoder))
 
         return created(REDIRECTION_URL).buildAndAwait()
+    }
+
+    suspend fun getToken(request: ServerRequest): ServerResponse {
+        val logInRequest = request.awaitBodyOrNull<LogInRequest>()
+            ?.also { validator.validate(it) }
+            ?: throw RequestBodyExtractFailedException()
+
+        return authenticationService.getToken(logInRequest.toCommand()).let {
+            ok().bodyValueAndAwait(TokenResponse(it))
+        }
     }
 
     suspend fun checkFollowing(request: ServerRequest): ServerResponse {

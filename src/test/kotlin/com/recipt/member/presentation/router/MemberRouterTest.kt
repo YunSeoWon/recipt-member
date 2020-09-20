@@ -1,14 +1,14 @@
 package com.recipt.member.presentation.router
 
 import com.ninjasquad.springmockk.MockkBean
+import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.member.application.member.dto.SignUpCommand
-import com.recipt.member.infrastructure.configuration.SecurityConfig
 import com.recipt.member.presentation.handler.MemberHandler
-import com.recipt.member.presentation.handler.MemberHandlerTest
 import com.recipt.member.presentation.model.request.SignUpRequest
+import com.recipt.member.presentation.support.TestSecurityConfig
 import com.recipt.member.presentation.toDocument
 import io.mockk.coEvery
 import io.mockk.every
@@ -37,7 +37,7 @@ import javax.validation.Validator
 
 @WebFluxTest
 @ExtendWith(RestDocumentationExtension::class)
-@ContextConfiguration(classes = [MemberRouter::class, MemberHandler::class, SecurityConfig::class])
+@ContextConfiguration(classes = [MemberRouter::class, MemberHandler::class, TestSecurityConfig::class])
 internal class MemberRouterTest {
 
     @MockkBean
@@ -51,6 +51,9 @@ internal class MemberRouterTest {
 
     @MockkBean
     private lateinit var passwordEncoder: PasswordEncoder
+
+    @MockkBean
+    private lateinit var authenticationService: AuthenticationService
 
     private lateinit var webTestClient: WebTestClient
 
@@ -87,7 +90,7 @@ internal class MemberRouterTest {
         coEvery { memberQueryService.getProfile(memberNo) } returns summary
 
         webTestClient.get()
-            .uri("/members/profile/{memberNo}", memberNo)
+            .uri("/members/profiles/{memberNo}", memberNo)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk

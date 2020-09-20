@@ -5,7 +5,7 @@ import com.recipt.member.domain.converter.MemberStatusConverter
 import com.recipt.member.domain.member.enum.MemberStatus
 import javax.persistence.*
 
-@Table(name = "MEMBER")
+@Table(name = "RECIPT_MEMBER")
 @Entity
 data class Member(
 
@@ -14,20 +14,22 @@ data class Member(
     @Column(name = "member_no")
     val no: Int = 0,
 
-    @Column(unique = true)
     val email: String,
 
-    @Column(unique = true)
+    @Column(name = "name")
     val nickname: String,
 
     val password: String,
 
     val introduction: String = "",
 
+    @Column(name = "mobile_no")
     val mobileNo: String,
 
+    @Column(name = "follower_count")
     val followerCount: Int = 0,
 
+    @Column(name = "member_status")
     @Convert(converter = MemberStatusConverter::class)
     val memberStatus: MemberStatus = MemberStatus.ACTIVE
 ) {

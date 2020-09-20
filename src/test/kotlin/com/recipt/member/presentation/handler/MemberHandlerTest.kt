@@ -1,5 +1,6 @@
 package com.recipt.member.presentation.handler
 
+import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
 import com.recipt.member.presentation.model.request.SignUpRequest
@@ -31,6 +32,9 @@ internal class MemberHandlerTest {
     @MockK
     private lateinit var passwordEncoder: PasswordEncoder
 
+    @MockK
+    private lateinit var authenticationService: AuthenticationService
+
     private lateinit var memberHandler: MemberHandler
 
     companion object {
@@ -43,7 +47,8 @@ internal class MemberHandlerTest {
             memberQueryService,
             memberCommandService,
             validator,
-            passwordEncoder
+            passwordEncoder,
+            authenticationService
         )
 
         every { validator.validate(any<Any>()) } returns emptySet()
@@ -83,5 +88,4 @@ internal class MemberHandlerTest {
 
         assertEquals(HttpStatus.CREATED, result.statusCode())
     }
-
 }

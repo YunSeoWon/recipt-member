@@ -13,3 +13,11 @@ spring:
     generate-ddl: false
     database: mysql
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+logging:
+  level:
+    org:
+      springframework: TRACE
