@@ -1,6 +1,7 @@
 package com.recipt.member.application
 
 import com.recipt.member.application.member.MemberQueryService
+import com.recipt.member.application.member.dto.FollowerProfileSummary
 import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.member.domain.member.entity.Member
@@ -30,6 +31,7 @@ class MemberQueryServiceTest {
     private val _introduction = "테스터입니다"
     private val _followerCount = 0
     private val _mobileNo = "010-1234-5678"
+    private val _profileImageUrl = "imageurl.com"
 
     @BeforeEach
     fun setUp() {
@@ -44,12 +46,14 @@ class MemberQueryServiceTest {
             every { nickname } returns _nickname
             every { introduction } returns _introduction
             every { followerCount } returns _followerCount
+            every { profileImageUrl } returns _profileImageUrl
         }
         val expected = ProfileSummary(
             nickname = _nickname,
             introduction = _introduction,
             followerCount = _followerCount,
-            totalRecipeReadCount = 0
+            totalRecipeReadCount = 0,
+            profileImageUrl = _profileImageUrl
         )
 
         every { memberRepository.findByIdOrNull(memberNo) } returns member
@@ -73,6 +77,7 @@ class MemberQueryServiceTest {
             every { introduction } returns _introduction
             every { followerCount } returns _followerCount
             every { mobileNo } returns _mobileNo
+            every { profileImageUrl } returns _profileImageUrl
         }
         val expected = MyProfile(
             email = _email,
@@ -80,7 +85,8 @@ class MemberQueryServiceTest {
             introduction = _introduction,
             mobileNo = _mobileNo,
             followerCount = _followerCount,
-            totalRecipeReadCount = 0
+            totalRecipeReadCount = 0,
+            profileImageUrl = _profileImageUrl
         )
 
         every { memberRepository.findByIdOrNull(memberNo) } returns member
@@ -93,5 +99,26 @@ class MemberQueryServiceTest {
         assertThrows<MemberNotFoundException> {
             runBlocking { memberQueryService.getMyProfile(memberNo + 1) }
         }
+    }
+
+    @Test
+    fun `자신이 팔로우한 회원 리스트 조회하기`() {
+        val memberNo = 1
+        val nicknames = listOf("팔로워1", "팔로워2")
+
+        val followerList = nicknames.map {
+            mockk<Member> {
+                every { nickname } returns it
+                every { profileImageUrl } returns null
+            }
+        }
+
+        every { memberRepository.findFollowerByNo(memberNo) } returns followerList
+
+        val result = runBlocking {
+            memberQueryService.getFollowerProfiles(memberNo)
+        }
+
+        assertEquals(result, nicknames.map { FollowerProfileSummary(it, null) } )
     }
 }

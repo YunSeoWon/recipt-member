@@ -1,6 +1,6 @@
 package com.recipt.member.presentation.support
 
-import com.recipt.member.domain.member.enum.MemberRole
+import com.recipt.member.domain.member.enums.MemberRole
 import com.recipt.member.presentation.ReciptAttributes
 import com.recipt.member.presentation.ReciptHeaders.AUTH_TOKEN
 import com.recipt.member.presentation.ReciptHeaders.TEST_AUTH_TOKEN
@@ -8,7 +8,6 @@ import com.recipt.member.presentation.model.MemberInfo
 import com.recipt.member.presentation.security.ReciptAuthenticationToken
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
-import org.springframework.context.annotation.ComponentScans
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -57,7 +56,7 @@ class MockSecurityContextRepository(
 
     override fun load(exchange: ServerWebExchange): Mono<SecurityContext> {
         val authHeader = exchange.request.headers.getFirst(AUTH_TOKEN)?.takeIf { it == TEST_AUTH_TOKEN }
-            ?: throw Exception()
+            ?: return Mono.empty()
 
         return authHeader.let {
             mockReactiveAuthenticationManger.authenticate(UsernamePasswordAuthenticationToken(it, it))

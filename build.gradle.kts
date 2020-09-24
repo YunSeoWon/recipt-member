@@ -1,14 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.asciidoctor.gradle.AsciidoctorTask
-import org.gradle.api.tasks.testing.Test
-import org.springframework.boot.gradle.tasks.bundling.BootJar
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 plugins {
-    id("org.springframework.boot") version "2.3.0.RELEASE"
+    id("org.springframework.boot") version "2.3.1.RELEASE"
     id("io.spring.dependency-management") version "1.0.9.RELEASE"
     id("org.asciidoctor.convert") version "1.5.3"
     war
     kotlin("jvm") version "1.3.72"
+    kotlin("kapt") version "1.3.61"
     kotlin("plugin.spring") version "1.3.72"
     kotlin("plugin.jpa") version "1.3.72"
 }
@@ -27,9 +26,23 @@ var docDir = file("src/main/resources/static/docs")
 
 ext["spring-security.version"] = "5.3.4.RELEASE"
 ext["spring.version"] = "5.2.8.RELEASE"
+val queryDslversion = "4.2.+"
+
+buildscript {
+    repositories {
+        maven(url = "https://plugins.gradle.org/m2/")
+        mavenCentral()
+    }
+
+    dependencies {
+        val querydslPluginVersion = "1.0.10"
+        classpath("gradle.plugin.com.ewerk.gradle.plugins:querydsl-plugin:${querydslPluginVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61")
+    }
+
+}
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
 
@@ -51,6 +64,12 @@ dependencies {
 
     // jwt
     implementation("io.jsonwebtoken:jjwt:0.9.1")
+
+    // jpa & querydsl
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    kapt("org.springframework.boot:spring-boot-configuration-processor")
+    implementation("com.querydsl:querydsl-jpa:${queryDslversion}")
+    kapt("com.querydsl:querydsl-apt:${queryDslversion}:jpa")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("mysql:mysql-connector-java")
@@ -91,4 +110,8 @@ tasks {
             }
         }
     }
+}
+
+sourceSets["main"].withConvention(KotlinSourceSet::class) {
+    kotlin.srcDir("$buildDir/generated/source/kapt/main")
 }

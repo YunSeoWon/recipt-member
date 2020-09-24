@@ -6,12 +6,14 @@ data class ProfileSummary (
     val nickname: String,
     val introduction: String,
     val followerCount: Int,
-    val totalRecipeReadCount: Int
+    val totalRecipeReadCount: Int,
+    val profileImageUrl: String?
 ) {
     constructor(member: Member): this (
         nickname = member.nickname,
         introduction = member.introduction,
         followerCount = member.followerCount,
-        totalRecipeReadCount = 0 // TODO: 레시피 모듈 나오면
+        totalRecipeReadCount = 0, // TODO: 레시피 모듈 나오면
+        profileImageUrl = member.profileImageUrl
     )
 }

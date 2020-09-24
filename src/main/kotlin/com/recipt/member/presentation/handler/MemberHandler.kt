@@ -5,6 +5,7 @@ import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
 import com.recipt.member.presentation.ReciptAttributes.MEMBER_INFO
 import com.recipt.member.presentation.exception.request.RequestBodyExtractFailedException
+import com.recipt.member.presentation.memberInfoOrThrow
 import com.recipt.member.presentation.model.MemberInfo
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
@@ -38,15 +39,17 @@ class MemberHandler (
     }
 
     suspend fun getMyProfile(request: ServerRequest): ServerResponse {
-        val memberInfo = request.attributeOrNull(MEMBER_INFO) as? MemberInfo
-            ?: throw Exception()
+        val memberInfo = request.memberInfoOrThrow()
 
         return ok().bodyValueAndAwait(memberQueryService.getMyProfile(memberInfo.no))
     }
 
     suspend fun getFollowingProfileList(request: ServerRequest): ServerResponse {
-        // TODO 인증 토큰을 만들어야..
-        return ok().bodyValueAndAwait("")
+        val memberInfo = request.memberInfoOrThrow()
+
+        return ok().bodyValueAndAwait(
+            memberQueryService.getFollowerProfiles(memberInfo.no)
+        )
     }
 
     suspend fun modifyMyProfile(request: ServerRequest): ServerResponse {

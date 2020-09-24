@@ -1,5 +1,6 @@
 package com.recipt.member.presentation
 
+import com.recipt.member.application.member.dto.FollowerProfileSummary
 import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.member.presentation.ReciptHeaders.AUTH_TOKEN
@@ -45,7 +46,9 @@ fun ProfileSummary.toDocument() = arrayOf(
     fieldWithPath("followerCount").type(JsonFieldType.NUMBER)
         .description("팔로워 수"),
     fieldWithPath("totalRecipeReadCount").type(JsonFieldType.NUMBER)
-        .description("회원이 쓴 레시피 총 조회 수")
+        .description("회원이 쓴 레시피 총 조회 수"),
+    fieldWithPath("profileImageUrl").type(JsonFieldType.STRING).optional()
+        .description("회원 프로필 이미지")
 )
 
 fun MyProfile.toDocument() = arrayOf(
@@ -60,5 +63,14 @@ fun MyProfile.toDocument() = arrayOf(
     fieldWithPath("followerCount").type(JsonFieldType.NUMBER)
         .description("팔로워 수"),
     fieldWithPath("totalRecipeReadCount").type(JsonFieldType.NUMBER)
-        .description("회원이 쓴 레시피 총 조회 수")
+        .description("회원이 쓴 레시피 총 조회 수"),
+    fieldWithPath("profileImageUrl").type(JsonFieldType.STRING).optional()
+        .description("회원 프로필 이미지")
+)
+
+fun FollowerProfileSummary.toDocument(prefix: String = "") = arrayOf(
+    fieldWithPath("$prefix.nickname").type(JsonFieldType.STRING)
+        .description("닉네임"),
+    fieldWithPath("$prefix.profileImageUrl").type(JsonFieldType.STRING).optional()
+        .description("회원 프로필 이미지")
 )

@@ -2,7 +2,7 @@ package com.recipt.member.domain.member.entity
 
 import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.domain.converter.MemberStatusConverter
-import com.recipt.member.domain.member.enum.MemberStatus
+import com.recipt.member.domain.member.enums.MemberStatus
 import javax.persistence.*
 
 @Table(name = "RECIPT_MEMBER")
@@ -31,7 +31,10 @@ data class Member(
 
     @Column(name = "member_status")
     @Convert(converter = MemberStatusConverter::class)
-    val memberStatus: MemberStatus = MemberStatus.ACTIVE
+    val memberStatus: MemberStatus = MemberStatus.ACTIVE,
+
+    @Column(name = "profile_image_url")
+    val profileImageUrl: String? = null
 ) {
     companion object {
         fun create(command: SignUpCommand) = Member(

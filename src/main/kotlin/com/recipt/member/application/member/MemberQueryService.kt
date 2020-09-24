@@ -1,5 +1,6 @@
 package com.recipt.member.application.member
 
+import com.recipt.member.application.member.dto.FollowerProfileSummary
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.domain.member.repository.MemberRepository
@@ -20,5 +21,12 @@ class MemberQueryService ( private val memberRepository: MemberRepository ) {
         return memberRepository.findByIdOrNull(memberNo)?.let {
             MyProfile(it)
         }?: throw MemberNotFoundException()
+    }
+
+    // TODO: Paging 적용하기.
+    suspend fun getFollowerProfiles(memberNo: Int): List<FollowerProfileSummary> {
+        return memberRepository.findFollowerByNo(memberNo).map {
+            FollowerProfileSummary(it.nickname, it.profileImageUrl)
+        }
     }
 }

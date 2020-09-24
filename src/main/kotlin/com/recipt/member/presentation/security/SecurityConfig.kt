@@ -1,6 +1,6 @@
 package com.recipt.member.presentation.security
 
-import com.recipt.member.domain.member.enum.MemberRole
+import com.recipt.member.domain.member.enums.MemberRole
 import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.ReactiveAuthenticationManager

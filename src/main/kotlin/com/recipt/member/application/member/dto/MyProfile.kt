@@ -8,7 +8,8 @@ data class MyProfile(
     val introduction: String,
     val mobileNo: String,
     val followerCount: Int,
-    val totalRecipeReadCount: Int
+    val totalRecipeReadCount: Int,
+    val profileImageUrl: String?
 ) {
     constructor(member: Member): this (
         email = member.email,
@@ -16,6 +17,7 @@ data class MyProfile(
         introduction = member.introduction,
         mobileNo = member.mobileNo,
         followerCount = member.followerCount,
-        totalRecipeReadCount = 0
+        totalRecipeReadCount = 0,
+        profileImageUrl = member.profileImageUrl
     )
 }

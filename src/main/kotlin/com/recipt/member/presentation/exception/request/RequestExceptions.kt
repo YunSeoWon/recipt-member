@@ -11,3 +11,7 @@ class InvalidParameterException(val parameterName: String):
 @ResponseStatus(code = HttpStatus.BAD_REQUEST)
 class RequestBodyExtractFailedException:
     ReciptException(RequestErrorCode.BODY_EXTRACT_FAIL)
+
+@ResponseStatus(code = HttpStatus.UNAUTHORIZED)
+class PermissionException:
+    ReciptException(RequestErrorCode.NO_PERMISSION)

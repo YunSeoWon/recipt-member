@@ -1,6 +1,6 @@
 package com.recipt.member.domain.converter
 
-import com.recipt.member.domain.member.enum.MemberStatus
+import com.recipt.member.domain.member.enums.MemberStatus
 import javax.persistence.AttributeConverter
 import javax.persistence.Converter
 

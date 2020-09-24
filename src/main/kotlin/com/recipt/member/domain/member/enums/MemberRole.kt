@@ -1,4 +1,4 @@
-package com.recipt.member.domain.member.enum
+package com.recipt.member.domain.member.enums
 
 enum class MemberRole {
     ADMIN, USER;

@@ -129,4 +129,23 @@ internal class MemberHandlerTest {
 
         assertEquals(HttpStatus.OK, result.statusCode())
     }
+
+    @Test
+    fun `자신이 팔로우한 회원 조회`() {
+        val memberInfo = MemberInfo(
+            email = "email@email.com",
+            no = 1,
+            nickname = "nickname"
+        )
+
+        val request = MockServerRequest.builder()
+            .attribute(MEMBER_INFO, memberInfo)
+            .build()
+
+        coEvery { memberQueryService.getFollowerProfiles(memberInfo.no) } returns mockk()
+
+        val result = runBlocking { memberHandler.getFollowingProfileList(request) }
+
+        assertEquals(HttpStatus.OK, result.statusCode())
+    }
 }

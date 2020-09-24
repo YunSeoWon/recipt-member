@@ -19,3 +19,15 @@ data class JwtTokenProperties(
     val signatureAlgorithm: SignatureAlgorithm
         get() = SignatureAlgorithm.valueOf(algorithm)
 }
+
+
+
+
+
+
+
+
+
+
+
+

@@ -5,6 +5,7 @@ import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.authentication.dto.TokenCreateCommand
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
+import com.recipt.member.application.member.dto.FollowerProfileSummary
 import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.member.application.member.dto.SignUpCommand
@@ -93,7 +94,8 @@ internal class MemberRouterTest {
             nickname = "테스터",
             introduction = "테스트",
             followerCount = 1,
-            totalRecipeReadCount = 0
+            totalRecipeReadCount = 0,
+            profileImageUrl = "http://image.com"
         )
 
         coEvery { memberQueryService.getProfile(memberNo) } returns summary
@@ -177,7 +179,8 @@ internal class MemberRouterTest {
             introduction = "intro",
             mobileNo = "010-1234-5678",
             followerCount = 1,
-            totalRecipeReadCount = 1
+            totalRecipeReadCount = 1,
+            profileImageUrl = "http://image.com"
         )
 
         coEvery { memberQueryService.getMyProfile(MemberInfo.TEST_MEMBER_INFO.no) } returns response
@@ -193,6 +196,32 @@ internal class MemberRouterTest {
                     "get-my-profile",
                     requestHeaders(*tokenHeader),
                     responseFields(*response.toDocument())
+                )
+            )
+    }
+
+    @Test
+    fun `자신이 팔로우한 회원 조회`() {
+        val response = listOf(
+            FollowerProfileSummary(
+                "팔로워",
+                "http://image-url.com"
+            )
+        )
+
+        coEvery { memberQueryService.getFollowerProfiles(MemberInfo.TEST_MEMBER_INFO.no) } returns response
+
+        webTestClient.get()
+            .uri("/members/following")
+            .accept(MediaType.APPLICATION_JSON)
+            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().consumeWith(
+                document(
+                    "get-follower-list",
+                    requestHeaders(*tokenHeader),
+                    responseFields(*response[0].toDocument("[]"))
                 )
             )
     }

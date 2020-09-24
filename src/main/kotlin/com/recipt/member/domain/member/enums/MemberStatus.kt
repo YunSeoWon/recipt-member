@@ -1,4 +1,4 @@
-package com.recipt.member.domain.member.enum
+package com.recipt.member.domain.member.enums
 
 import com.recipt.member.domain.member.ReciptEnum
 
