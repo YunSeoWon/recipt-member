@@ -62,7 +62,7 @@ class MockSecurityContextRepository(
             mockReactiveAuthenticationManger.authenticate(UsernamePasswordAuthenticationToken(it, it))
                 .map { authentication ->
                     val memberInfo = (authentication as ReciptAuthenticationToken).memberInfo
-                    exchange.attributes.put(ReciptAttributes.MEMBER_INFO, memberInfo)
+                    exchange.attributes[ReciptAttributes.MEMBER_INFO] = memberInfo
 
                     SecurityContextImpl(authentication) as SecurityContext
                 }

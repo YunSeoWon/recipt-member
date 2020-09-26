@@ -17,13 +17,12 @@ spring:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
 
-logging:
-  level:
-    org:
-      springframework: TRACE
-
 security:
   jwt:
     validate-time: 1800
     key: recipt
     algorithm: HS256
+
+logging:
+  level:
+    org.springframework: TRACE

@@ -3,19 +3,19 @@ package com.recipt.member.presentation.handler
 import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
-import com.recipt.member.presentation.ReciptAttributes.MEMBER_INFO
 import com.recipt.member.presentation.exception.request.RequestBodyExtractFailedException
 import com.recipt.member.presentation.memberInfoOrThrow
-import com.recipt.member.presentation.model.MemberInfo
 import com.recipt.member.presentation.model.request.LogInRequest
+import com.recipt.member.presentation.model.request.ProfileModifyRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
+import com.recipt.member.presentation.model.response.CheckingResponse
 import com.recipt.member.presentation.model.response.TokenResponse
 import com.recipt.member.presentation.pathVariableToPositiveIntOrThrow
+import com.recipt.member.presentation.queryParamToPositiveIntOrThrow
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
-import org.springframework.web.reactive.function.server.ServerResponse.created
-import org.springframework.web.reactive.function.server.ServerResponse.ok
+import org.springframework.web.reactive.function.server.ServerResponse.*
 import java.net.URI
 import javax.validation.Validator
 
@@ -53,8 +53,16 @@ class MemberHandler (
     }
 
     suspend fun modifyMyProfile(request: ServerRequest): ServerResponse {
-        // TODO 인증 토큰을 만들어야..
-        return ok().bodyValueAndAwait("")
+        val memberInfo = request.memberInfoOrThrow()
+        val modifyRequest = request.awaitBodyOrNull<ProfileModifyRequest>()
+            ?.also {
+                validator.validate(it)
+                it.validate()
+            }?: throw RequestBodyExtractFailedException()
+
+        memberCommandService.modify(memberInfo.no, modifyRequest.toCommand())
+
+        return noContent().buildAndAwait()
     }
 
     suspend fun signUp(request: ServerRequest): ServerResponse {
@@ -78,17 +86,27 @@ class MemberHandler (
     }
 
     suspend fun checkFollowing(request: ServerRequest): ServerResponse {
-        // TODO
-        return ok().bodyValueAndAwait("")
+        val memberNo = request.queryParamToPositiveIntOrThrow("followerNo")
+        val memberInfo = request.memberInfoOrThrow()
+
+        return memberQueryService.checkFollowing(from = memberInfo.no, to = memberNo).let {
+            ok().bodyValueAndAwait(CheckingResponse(it))
+        }
     }
 
     suspend fun follow(request: ServerRequest): ServerResponse {
-        // TODO
-        return ok().bodyValueAndAwait("")
+        val memberNo = request.queryParamToPositiveIntOrThrow("followerNo")
+        val memberInfo = request.memberInfoOrThrow()
+
+        memberCommandService.follow(from = memberInfo.no, to = memberNo)
+        return noContent().buildAndAwait()
     }
 
     suspend fun unfollow(request: ServerRequest): ServerResponse {
-        // TODO
-        return ok().bodyValueAndAwait("")
+        val memberNo = request.queryParamToPositiveIntOrThrow("followerNo")
+        val memberInfo = request.memberInfoOrThrow()
+
+        memberCommandService.unfollow(from = memberInfo.no, to = memberNo)
+        return noContent().buildAndAwait()
     }
 }

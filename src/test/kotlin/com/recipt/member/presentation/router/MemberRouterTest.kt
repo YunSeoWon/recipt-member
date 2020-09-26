@@ -5,16 +5,15 @@ import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.authentication.dto.TokenCreateCommand
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
-import com.recipt.member.application.member.dto.FollowerProfileSummary
-import com.recipt.member.application.member.dto.MyProfile
-import com.recipt.member.application.member.dto.ProfileSummary
-import com.recipt.member.application.member.dto.SignUpCommand
+import com.recipt.member.application.member.dto.*
 import com.recipt.member.presentation.ReciptHeaders.AUTH_TOKEN
 import com.recipt.member.presentation.ReciptHeaders.TEST_AUTH_TOKEN
 import com.recipt.member.presentation.handler.MemberHandler
 import com.recipt.member.presentation.model.MemberInfo
 import com.recipt.member.presentation.model.request.LogInRequest
+import com.recipt.member.presentation.model.request.ProfileModifyRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
+import com.recipt.member.presentation.model.response.CheckingResponse
 import com.recipt.member.presentation.model.response.TokenResponse
 import com.recipt.member.presentation.support.TestSecurityConfig
 import com.recipt.member.presentation.toDocument
@@ -201,6 +200,35 @@ internal class MemberRouterTest {
     }
 
     @Test
+    fun `프로필 변경`() {
+        val updateRequest = ProfileModifyRequest(
+            nickname = "nickname",
+            introduction = "intro",
+            mobileNo = "010-1234-5678",
+            profileImageUrl = "http://image.com",
+            password = "password1234!",
+            newPassword = "password1235!"
+        )
+
+        every { memberCommandService.modify(MemberInfo.TEST_MEMBER_INFO.no, updateRequest.toCommand()) } just runs
+
+        webTestClient.put()
+            .uri("/members/profiles/me")
+            .accept(MediaType.APPLICATION_JSON)
+            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .bodyValue(updateRequest)
+            .exchange()
+            .expectStatus().isNoContent
+            .expectBody().consumeWith(
+                document(
+                    "modify-my-profile",
+                    requestHeaders(*tokenHeader),
+                    requestFields(*updateRequest.toDocument())
+                )
+            )
+    }
+
+    @Test
     fun `자신이 팔로우한 회원 조회`() {
         val response = listOf(
             FollowerProfileSummary(
@@ -222,6 +250,66 @@ internal class MemberRouterTest {
                     "get-follower-list",
                     requestHeaders(*tokenHeader),
                     responseFields(*response[0].toDocument("[]"))
+                )
+            )
+    }
+
+    @Test
+    fun `팔로우 체크`() {
+        val followerNo = 3
+        val response = CheckingResponse(true)
+        coEvery { memberQueryService.checkFollowing(any(), any()) } returns response.right
+
+        webTestClient.get()
+            .uri("/members/following/check?followerNo=${followerNo}")
+            .accept(MediaType.APPLICATION_JSON)
+            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().consumeWith(
+                document(
+                    "check-follower-list",
+                    requestHeaders(*tokenHeader),
+                    responseFields(*response.toDocument("팔로우"))
+                )
+            )
+    }
+
+    @Test
+    fun `팔로우`() {
+        val followerNo = 3
+
+        coEvery { memberCommandService.follow(any(), any()) } just runs
+
+        webTestClient.post()
+            .uri("/members/following?followerNo=${followerNo}")
+            .accept(MediaType.APPLICATION_JSON)
+            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .exchange()
+            .expectStatus().isNoContent
+            .expectBody().consumeWith(
+                document(
+                    "follow",
+                    requestHeaders(*tokenHeader)
+                )
+            )
+    }
+    @Test
+    fun `언팔로우`() {
+        val followerNo = 3
+
+        coEvery { memberCommandService.unfollow(any(), any()) } just runs
+
+        webTestClient.delete()
+            .uri("/members/following?followerNo=${followerNo}")
+            .accept(MediaType.APPLICATION_JSON)
+            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .exchange()
+            .expectStatus().isNoContent
+            .expectBody().consumeWith(
+                document(
+                    "unfollow",
+                    requestHeaders(*tokenHeader)
                 )
             )
     }

@@ -12,3 +12,6 @@ class DuplicatedMemberException(something: String): ReciptException(MemberErrorC
 
 @ResponseStatus(code = HttpStatus.BAD_REQUEST)
 class WrongEmailOrPasswordException: ReciptException(MemberErrorCode.WRONG_EMAIL_OR_PASSWORD)
+
+@ResponseStatus(code = HttpStatus.BAD_REQUEST)
+class WrongPasswordException: ReciptException(MemberErrorCode.WRONG_PASSWORD)

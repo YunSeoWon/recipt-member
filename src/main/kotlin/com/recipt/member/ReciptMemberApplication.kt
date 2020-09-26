@@ -1,6 +1,5 @@
 package com.recipt.member
 
-import com.recipt.member.infrastructure.properties.PropertiesBase
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
@@ -8,9 +7,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.runApplication
 import org.springframework.web.reactive.config.EnableWebFlux
 
-
 @EnableWebFlux
-@ConfigurationPropertiesScan(basePackageClasses = [PropertiesBase::class])
+@ConfigurationPropertiesScan
 @SpringBootApplication(exclude = [ReactiveUserDetailsServiceAutoConfiguration::class])
 class ReciptMemberApplication
 

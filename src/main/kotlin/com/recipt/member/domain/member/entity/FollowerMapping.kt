@@ -11,7 +11,7 @@ import javax.persistence.Table
 data class FollowerMapping(
     @Id
     @Column(name = "follower_mapping_no")
-    val no: Int,
+    val no: Int = 0,
 
     @Column(name = "member_no")
     val memberNo: Int,

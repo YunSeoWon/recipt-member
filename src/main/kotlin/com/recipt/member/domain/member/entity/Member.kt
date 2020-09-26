@@ -1,5 +1,6 @@
 package com.recipt.member.domain.member.entity
 
+import com.recipt.member.application.member.dto.ProfileModifyCommand
 import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.domain.converter.MemberStatusConverter
 import com.recipt.member.domain.member.enums.MemberStatus
@@ -16,32 +17,46 @@ data class Member(
 
     val email: String,
 
-    @Column(name = "name")
-    val nickname: String,
-
-    val password: String,
-
-    val introduction: String = "",
-
-    @Column(name = "mobile_no")
-    val mobileNo: String,
-
     @Column(name = "follower_count")
     val followerCount: Int = 0,
 
     @Column(name = "member_status")
     @Convert(converter = MemberStatusConverter::class)
-    val memberStatus: MemberStatus = MemberStatus.ACTIVE,
+    val memberStatus: MemberStatus = MemberStatus.ACTIVE
+) {
+    @Column(name = "name")
+    var nickname: String = ""
+        private set
+
+    var password: String = ""
+        private set
+
+    var introduction: String = ""
+        private set
+
+    @Column(name = "mobile_no")
+    var mobileNo: String = ""
+        private set
 
     @Column(name = "profile_image_url")
-    val profileImageUrl: String? = null
-) {
+    var profileImageUrl: String? = null
+       private set
+
     companion object {
         fun create(command: SignUpCommand) = Member(
-            email = command.email,
-            nickname = command.nickname,
-            password = command.password,
+            email = command.email
+        ).apply {
+            nickname = command.nickname
+            password = command.password
             mobileNo = command.mobileNo
-        )
+        }
+    }
+
+    fun modify(command: ProfileModifyCommand, newEncodedPassword: String?) {
+        command.introduction?.let { introduction = it }
+        command.mobileNo?.let { mobileNo = it }
+        newEncodedPassword?.let { password = it }
+        command.nickname?.let { nickname = it }
+        command.profileImageUrl?.let { profileImageUrl = it }
     }
 }

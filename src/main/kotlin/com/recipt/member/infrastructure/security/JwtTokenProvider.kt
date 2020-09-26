@@ -8,6 +8,7 @@ import com.recipt.member.presentation.ReciptAttributes.MEMBER_INFO
 import com.recipt.member.presentation.model.MemberInfo
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component
 import java.util.*
 
@@ -21,7 +22,7 @@ class JwtTokenProvider (
 ) {
 
     fun getAllClaimsFromToken(token: String): Claims = Jwts.parser()
-        .setSigningKey(jwtTokenProperties.secretKey)
+        .setSigningKey(jwtTokenProperties.getSecretKey())
         .parseClaimsJws(token)
         .body
 
@@ -43,14 +44,14 @@ class JwtTokenProvider (
 
     fun doGenerateToken(claims: MutableMap<String, Any>, username: String): String {
         val createDate = Date()
-        val expirationDate = Date(createDate.time + jwtTokenProperties.validateTimeMili)
+        val expirationDate = Date(createDate.time + jwtTokenProperties.getValidateTimeMili())
 
         return Jwts.builder()
             .setClaims(claims)
             .setSubject(username)
             .setIssuedAt(createDate)
             .setExpiration(expirationDate)
-            .signWith(jwtTokenProperties.signatureAlgorithm, jwtTokenProperties.secretKey)
+            .signWith(jwtTokenProperties.getSignatureAlgorithm(), jwtTokenProperties.getSecretKey())
             .compact()
     }
 }

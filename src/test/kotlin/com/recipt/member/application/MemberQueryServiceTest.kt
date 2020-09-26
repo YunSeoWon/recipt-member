@@ -121,4 +121,19 @@ class MemberQueryServiceTest {
 
         assertEquals(result, nicknames.map { FollowerProfileSummary(it, null) } )
     }
+
+    @Test
+    fun `팔로우 체크`() {
+        val from = 1
+        val to = 2
+        val notExisted = 3
+
+        every { memberRepository.existFollowing(from = from, to = to) } returns true
+        every { memberRepository.existFollowing(from = from, to = notExisted) } returns false
+
+        runBlocking {
+            assertEquals(true, memberQueryService.checkFollowing(from, to))
+            assertEquals(false, memberQueryService.checkFollowing(from, notExisted))
+        }
+    }
 }

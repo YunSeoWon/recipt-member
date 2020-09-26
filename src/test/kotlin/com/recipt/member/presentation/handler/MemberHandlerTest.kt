@@ -6,6 +6,7 @@ import com.recipt.member.application.member.MemberQueryService
 import com.recipt.member.presentation.ReciptAttributes.MEMBER_INFO
 import com.recipt.member.presentation.model.MemberInfo
 import com.recipt.member.presentation.model.request.LogInRequest
+import com.recipt.member.presentation.model.request.ProfileModifyRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -44,6 +45,11 @@ internal class MemberHandlerTest {
 
     companion object {
         private const val ENCODED = "E@DDF$#@T"
+        private val memberInfo = MemberInfo(
+            email = "email@email.com",
+            no = 1,
+            nickname = "nickname"
+        )
     }
 
     @BeforeEach
@@ -113,12 +119,6 @@ internal class MemberHandlerTest {
 
     @Test
     fun `자신의 프로필 조회`() {
-        val memberInfo = MemberInfo(
-            email = "email@email.com",
-            no = 1,
-            nickname = "nickname"
-        )
-
         val request = MockServerRequest.builder()
             .attribute(MEMBER_INFO, memberInfo)
             .build()
@@ -132,12 +132,6 @@ internal class MemberHandlerTest {
 
     @Test
     fun `자신이 팔로우한 회원 조회`() {
-        val memberInfo = MemberInfo(
-            email = "email@email.com",
-            no = 1,
-            nickname = "nickname"
-        )
-
         val request = MockServerRequest.builder()
             .attribute(MEMBER_INFO, memberInfo)
             .build()
@@ -147,5 +141,80 @@ internal class MemberHandlerTest {
         val result = runBlocking { memberHandler.getFollowingProfileList(request) }
 
         assertEquals(HttpStatus.OK, result.statusCode())
+    }
+
+    @Test
+    fun `회원정보 변경`() {
+        val updateRequest = ProfileModifyRequest(
+            password = "password",
+            nickname = "닉네임",
+            mobileNo = "010-1111-1111",
+            introduction = "소개글",
+            profileImageUrl = null,
+            newPassword = "password2"
+        )
+
+        val request = MockServerRequest.builder()
+            .attribute(MEMBER_INFO, memberInfo)
+            .body(Mono.just(updateRequest))
+
+        coEvery { memberCommandService.modify(any(), any()) } just runs
+
+        val result = runBlocking {
+            memberHandler.modifyMyProfile(request)
+        }
+
+        assertEquals(HttpStatus.NO_CONTENT, result.statusCode())
+    }
+
+    @Test
+    fun `팔로잉 확인`() {
+        val followerNo = 2
+        val request = MockServerRequest.builder()
+            .attribute(MEMBER_INFO, memberInfo)
+            .queryParam("followerNo", followerNo.toString())
+            .build()
+
+        coEvery { memberQueryService.checkFollowing(from = memberInfo.no, to = followerNo) } returns true
+
+        val result = runBlocking {
+            memberHandler.checkFollowing(request)
+        }
+
+        assertEquals(HttpStatus.OK, result.statusCode())
+    }
+
+    @Test
+    fun `팔로우`() {
+        val followerNo = 2
+        val request = MockServerRequest.builder()
+            .attribute(MEMBER_INFO, memberInfo)
+            .queryParam("followerNo", followerNo.toString())
+            .build()
+
+        coEvery { memberCommandService.follow(from = memberInfo.no, to = followerNo) } just runs
+
+        val result = runBlocking {
+            memberHandler.follow(request)
+        }
+
+        assertEquals(HttpStatus.NO_CONTENT, result.statusCode())
+    }
+
+    @Test
+    fun `언팔로우`() {
+        val followerNo = 2
+        val request = MockServerRequest.builder()
+            .attribute(MEMBER_INFO, memberInfo)
+            .queryParam("followerNo", followerNo.toString())
+            .build()
+
+        coEvery { memberCommandService.unfollow(from = memberInfo.no, to = followerNo) } just runs
+
+        val result = runBlocking {
+            memberHandler.unfollow(request)
+        }
+
+        assertEquals(HttpStatus.NO_CONTENT, result.statusCode())
     }
 }

@@ -35,7 +35,7 @@ class MemberRouter (
 
                     "/following".nest {
                         GET("", memberHandler::getFollowingProfileList)
-                        GET("/check/{memberNo}", memberHandler::checkFollowing)
+                        GET("/check", memberHandler::checkFollowing)
                         POST("", memberHandler::follow)
                         DELETE("", memberHandler::unfollow)
                     }

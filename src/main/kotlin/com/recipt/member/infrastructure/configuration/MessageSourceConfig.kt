@@ -14,7 +14,7 @@ class MessageSourceConfig {
 
         return ReloadableResourceBundleMessageSource().apply {
             setDefaultEncoding("UTF-8")
-            setBasenames("classpath:message/message-error")
+            setBasenames("classpath:messages/message-error")
         }
     }
 }

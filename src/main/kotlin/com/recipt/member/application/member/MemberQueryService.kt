@@ -29,4 +29,8 @@ class MemberQueryService ( private val memberRepository: MemberRepository ) {
             FollowerProfileSummary(it.nickname, it.profileImageUrl)
         }
     }
+
+    suspend fun checkFollowing(from: Int, to: Int): Boolean {
+        return memberRepository.existFollowing(from, to)
+    }
 }
