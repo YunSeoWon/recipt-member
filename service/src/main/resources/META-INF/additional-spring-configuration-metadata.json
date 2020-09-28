@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "security.jwt.validate-time",
+      "type": "java.lang.Integer",
+      "description": "Description for security.jwt.validate-time."
+    },
+    {
+      "name": "security.jwt.key",
+      "type": "java.lang.String",
+      "description": "Description for security.jwt.key."
+    },
+    {
+      "name": "security.jwt.algorithm",
+      "type": "java.lang.String",
+      "description": "Description for security.jwt.algorithm."
+    }
+  ] }

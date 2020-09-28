@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/recipt?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC
+    username: reciptuser
+    password: recipereceipt
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    generate-ddl: false
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+security:
+  jwt:
+    validate-time: 1800
+    key: recipt
+    algorithm: HS256
+
+logging:
+  level:
+    org.springframework: TRACE
