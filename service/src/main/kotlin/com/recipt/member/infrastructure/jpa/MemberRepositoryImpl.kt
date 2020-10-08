@@ -1,6 +1,5 @@
 package com.recipt.member.infrastructure.jpa
 
-import com.recipt.member.domain.member.entity.FollowerMapping
 import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.entity.QFollowerMapping
 import com.recipt.member.domain.member.entity.QMember

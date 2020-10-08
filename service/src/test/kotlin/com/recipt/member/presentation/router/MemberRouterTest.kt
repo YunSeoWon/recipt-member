@@ -10,12 +10,14 @@ import com.recipt.core.http.ReciptHeaders.AUTH_TOKEN
 import com.recipt.core.http.ReciptHeaders.TEST_AUTH_TOKEN
 import com.recipt.member.presentation.handler.MemberHandler
 import com.recipt.core.model.MemberInfo
+import com.recipt.member.presentation.exception.GlobalErrorAttributes
+import com.recipt.member.presentation.exception.GlobalErrorWebExceptionHandler
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.model.response.CheckingResponse
 import com.recipt.member.presentation.model.response.TokenResponse
-import com.recipt.member.presentation.support.TestSecurityConfig
+import com.recipt.member.presentation.supports.AccessTokenFilter
 import com.recipt.member.presentation.toDocument
 import com.recipt.member.presentation.tokenHeader
 import io.mockk.coEvery
@@ -45,7 +47,7 @@ import javax.validation.Validator
 
 @WebFluxTest
 @ExtendWith(RestDocumentationExtension::class)
-@ContextConfiguration(classes = [MemberRouter::class, MemberHandler::class, TestSecurityConfig::class])
+@ContextConfiguration(classes = [MemberRouter::class, MemberHandler::class, AccessTokenFilter::class, GlobalErrorWebExceptionHandler::class, GlobalErrorAttributes::class])
 internal class MemberRouterTest {
 
     @MockkBean

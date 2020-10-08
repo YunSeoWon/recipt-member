@@ -9,7 +9,7 @@ import org.springframework.web.reactive.config.EnableWebFlux
 
 @EnableWebFlux
 @ConfigurationPropertiesScan
-@SpringBootApplication(exclude = [ReactiveUserDetailsServiceAutoConfiguration::class])
+@SpringBootApplication
 class ReciptMemberApplication
 
 fun main(args: Array<String>) {
