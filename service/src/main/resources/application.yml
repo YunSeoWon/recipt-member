@@ -23,12 +23,19 @@ spring:
         create_empty_composites:
           enabled: true
 
+  redis:
+    port: 6379
+    host: 127.0.0.1
+    password: recipereceipt
+    lettuce:
+      pool:
+        max-active: 10
+        max-idle: 10
+        min-idle: 2
+
+
 security:
   jwt:
     validate-time: 1800
     key: recipt
     algorithm: HS256
-
-logging:
-  level:
-    org.springframework: TRACE

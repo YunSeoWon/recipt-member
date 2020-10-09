@@ -8,6 +8,7 @@ import com.recipt.core.http.ReciptAttributes.MEMBER_INFO
 import com.recipt.core.model.MemberInfo
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.*
 
@@ -19,6 +20,7 @@ class JwtTokenProvider (
     private val objectMapper: ObjectMapper,
     private val jwtTokenProperties: JwtTokenProperties
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     fun getAllClaimsFromToken(token: String): Claims = Jwts.parser()
         .setSigningKey(jwtTokenProperties.getSecretKey())
@@ -31,6 +33,8 @@ class JwtTokenProvider (
 
     fun generateToken(member: Member): String {
         val memberInfo = createMemberInfo(member)
+
+        logger.info("MEMBER_INFO: ${objectMapper.writeValueAsString(memberInfo)}")
         return doGenerateToken(
             claims = mutableMapOf(
                 "role" to listOf(MemberRole.USER.role),

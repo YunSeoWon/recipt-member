@@ -15,6 +15,7 @@ MSA 환경 요리 레시피 웹 서비스 Toy Project 중 회원 MSA 모듈입�
 - [x] 🗄 MySQL
 - [x] 🗄 Spring JPA
 - [x] 🗄 QueryDsl
+- [x] 🛑 Redis
 - [x] 📒 Spring Restdocs
 - [ ] Kafka
 - [ ] Spring Cloud

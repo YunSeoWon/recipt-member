@@ -5,16 +5,15 @@ import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.MemberRepository
 import com.recipt.member.infrastructure.security.JwtTokenProvider
 import com.recipt.core.exception.member.WrongEmailOrPasswordException
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.mockk
-import io.mockk.verify
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.security.crypto.password.PasswordEncoder
 
 @ExtendWith(MockKExtension::class)
@@ -29,6 +28,9 @@ internal class AuthenticationServiceTest {
     @MockK
     private lateinit var passwordEncoder: PasswordEncoder
 
+    @MockK
+    private lateinit var stringRedisTemplate: StringRedisTemplate
+
     private lateinit var authenticationService: AuthenticationService
 
     private val rightPassword = "password"
@@ -38,7 +40,7 @@ internal class AuthenticationServiceTest {
 
     @BeforeEach
     fun setUp() {
-        authenticationService = AuthenticationService(memberRepository, jwtTokenProvider, passwordEncoder)
+        authenticationService = AuthenticationService(memberRepository, jwtTokenProvider, passwordEncoder, stringRedisTemplate)
 
         val member = mockk<Member> {
             every { password } returns rightPassword
@@ -49,6 +51,7 @@ internal class AuthenticationServiceTest {
 
         every { passwordEncoder.matches(rightPassword, rightPassword) } returns true
         every { passwordEncoder.matches(not(rightPassword), rightPassword) } returns false
+        every { stringRedisTemplate.opsForValue().set(any(), any()) } just runs
 
         every { jwtTokenProvider.generateToken(any<Member>()) } returns "token"
     }

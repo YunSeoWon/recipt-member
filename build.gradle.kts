@@ -79,6 +79,8 @@ subprojects {
         apply(plugin = "kotlin-jpa")
         apply(plugin = "org.asciidoctor.convert")
 
+        val jacksonVersion = "2.11.1"
+
         dependencies {
             implementation(project(":core"))
 
@@ -89,9 +91,8 @@ subprojects {
             implementation("org.springframework.boot:spring-boot-starter-validation")
 
             // jackson
-            implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-            implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-            implementation("com.fasterxml.jackson.datatype:jackson-datatype-hibernate5")
+            implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+            implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
 
             // jpa & querydsl
             implementation("org.springframework.boot:spring-boot-starter-data-jpa")
