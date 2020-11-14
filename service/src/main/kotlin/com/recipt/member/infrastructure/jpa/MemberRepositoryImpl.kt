@@ -4,11 +4,10 @@ import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.entity.QFollowerMapping
 import com.recipt.member.domain.member.entity.QMember
 import com.recipt.member.domain.member.repository.MemberAggregateRepository
-import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport
 import org.springframework.stereotype.Repository
 
 @Repository
-class MemberRepositoryImpl : MemberAggregateRepository, QuerydslRepositorySupport(Member::class.java) {
+class MemberRepositoryImpl : MemberAggregateRepository, AbstractReciptRepository(Member::class) {
 
     private val member = QMember.member
 
