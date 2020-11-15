@@ -5,6 +5,7 @@ import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.MemberRepository
 import com.recipt.member.infrastructure.security.JwtTokenProvider
 import com.recipt.core.exception.member.WrongEmailOrPasswordException
+import com.recipt.member.application.authentication.dto.TokenResult
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -28,9 +29,6 @@ internal class AuthenticationServiceTest {
     @MockK
     private lateinit var passwordEncoder: PasswordEncoder
 
-    @MockK
-    private lateinit var stringRedisTemplate: StringRedisTemplate
-
     private lateinit var authenticationService: AuthenticationService
 
     private val rightPassword = "password"
@@ -40,7 +38,7 @@ internal class AuthenticationServiceTest {
 
     @BeforeEach
     fun setUp() {
-        authenticationService = AuthenticationService(memberRepository, jwtTokenProvider, passwordEncoder, stringRedisTemplate)
+        authenticationService = AuthenticationService(memberRepository, jwtTokenProvider, passwordEncoder)
 
         val member = mockk<Member> {
             every { password } returns rightPassword
@@ -51,9 +49,10 @@ internal class AuthenticationServiceTest {
 
         every { passwordEncoder.matches(rightPassword, rightPassword) } returns true
         every { passwordEncoder.matches(not(rightPassword), rightPassword) } returns false
-        every { stringRedisTemplate.opsForValue().set(any(), any()) } just runs
 
-        every { jwtTokenProvider.generateToken(any<Member>()) } returns "token"
+        every { jwtTokenProvider.generateToken(any<Member>()) } returns TokenResult(
+            "accessToken", "refreshToken"
+        )
     }
 
     @Test
@@ -112,6 +111,24 @@ internal class AuthenticationServiceTest {
 
         verify(exactly = 0) {
             jwtTokenProvider.generateToken(any<Member>())
+        }
+    }
+
+    @Test
+    fun `토큰 재발급`() {
+        val refreshToken = "refreshToken"
+        val tokenResult = TokenResult(
+            "accessToken", "refreshToken"
+        )
+
+        every { jwtTokenProvider.findAndDelete(refreshToken) } returns mockk()
+        every { jwtTokenProvider.doGenerateToken(any()) } returns tokenResult
+
+        val result = authenticationService.refreshToken(refreshToken)
+
+        verify {
+            jwtTokenProvider.findAndDelete(refreshToken)
+            jwtTokenProvider.doGenerateToken(any())
         }
     }
 }

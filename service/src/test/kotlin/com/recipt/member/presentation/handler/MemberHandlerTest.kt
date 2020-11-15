@@ -5,8 +5,10 @@ import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
 import com.recipt.core.http.ReciptAttributes.MEMBER_INFO
 import com.recipt.core.model.MemberInfo
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
+import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -104,15 +106,33 @@ internal class MemberHandlerTest {
             email = "email@email.com",
             password = "password"
         )
-
+        val token = TokenResult(
+            "accessToken", "refreshToken"
+        )
         val request = MockServerRequest.builder()
             .body(Mono.just(logInRequest))
 
-        every { authenticationService.getToken(logInRequest.toCommand()) } returns "token"
+        every { authenticationService.getToken(logInRequest.toCommand()) } returns token
 
         val result = runBlocking { memberHandler.getToken(request) }
 
         assertEquals(HttpStatus.OK, result.statusCode())
+    }
+
+    @Test
+    fun `토큰 재발급`() {
+        val refreshToken = RefreshTokenRequest("refreshToken")
+
+        val request = MockServerRequest.builder()
+            .body(Mono.just(refreshToken))
+
+        every { authenticationService.refreshToken(refreshToken.refreshToken) } returns mockk()
+
+        val result = runBlocking { memberHandler.refreshToken(request) }
+
+        verify {
+            authenticationService.refreshToken(refreshToken.refreshToken)
+        }
     }
 
     @Test

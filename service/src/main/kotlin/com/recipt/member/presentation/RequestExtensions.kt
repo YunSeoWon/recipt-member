@@ -3,10 +3,10 @@ package com.recipt.member.presentation
 import com.recipt.core.http.ReciptAttributes.MEMBER_INFO
 import com.recipt.core.exception.request.InvalidParameterException
 import com.recipt.core.exception.request.PermissionException
+import com.recipt.core.exception.request.RequestBodyExtractFailedException
 import com.recipt.core.model.MemberInfo
-import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.reactive.function.server.attributeOrNull
-import org.springframework.web.reactive.function.server.queryParamOrNull
+import kotlinx.coroutines.reactive.awaitFirstOrNull
+import org.springframework.web.reactive.function.server.*
 
 fun ServerRequest.queryParamToPositiveIntOrThrow(parameterName: String) =
     queryParamOrNull(parameterName)
@@ -20,3 +20,5 @@ fun ServerRequest.pathVariableToPositiveIntOrThrow(parameterName: String) =
 
 fun ServerRequest.memberInfoOrThrow() = (attributeOrNull(MEMBER_INFO) as? MemberInfo)
     ?: throw PermissionException()
+
+suspend inline fun <reified T : Any> ServerRequest.awaitBodyOrThrow(): T = awaitBodyOrNull<T>()?: throw RequestBodyExtractFailedException()

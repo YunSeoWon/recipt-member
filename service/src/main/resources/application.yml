@@ -36,6 +36,11 @@ spring:
 
 security:
   jwt:
-    validate-time: 1800
-    key: recipt
-    algorithm: HS256
+    access:
+      validate-time: 1800
+      key: recipt-access
+      algorithm: HS256
+    refresh:
+      validate-time: 7
+      key: recipt-refresh
+      algorithm: HS512

@@ -4,11 +4,12 @@ import com.recipt.member.application.member.dto.FollowerProfileSummary
 import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.core.http.ReciptHeaders.AUTH_TOKEN
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
+import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.model.response.CheckingResponse
-import com.recipt.member.presentation.model.response.TokenResponse
 import org.springframework.restdocs.headers.HeaderDocumentation.headerWithName
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
@@ -35,9 +36,16 @@ fun LogInRequest.toDocument() = arrayOf(
         .description("로그인 회원 비밀번호")
 )
 
-fun TokenResponse.toDocument() = arrayOf(
-    fieldWithPath("token").type(JsonFieldType.STRING)
-        .description("RECIPT 인증 TOKEN")
+fun RefreshTokenRequest.toDocument() = arrayOf(
+    fieldWithPath("refreshToken").type(JsonFieldType.STRING)
+        .description("refresh token")
+)
+
+fun TokenResult.toDocument() = arrayOf(
+    fieldWithPath("accessToken").type(JsonFieldType.STRING)
+        .description("RECIPT 인증 TOKEN"),
+    fieldWithPath("refreshToken").type(JsonFieldType.STRING)
+        .description("RECIPT refresh TOKEN")
 )
 
 fun ProfileSummary.toDocument() = arrayOf(

@@ -10,13 +10,14 @@ import com.recipt.core.http.ReciptHeaders.AUTH_TOKEN
 import com.recipt.core.http.ReciptHeaders.TEST_AUTH_TOKEN
 import com.recipt.member.presentation.handler.MemberHandler
 import com.recipt.core.model.MemberInfo
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.presentation.exception.GlobalErrorAttributes
 import com.recipt.member.presentation.exception.GlobalErrorWebExceptionHandler
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
+import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.model.response.CheckingResponse
-import com.recipt.member.presentation.model.response.TokenResponse
 import com.recipt.member.presentation.supports.AccessTokenFilter
 import com.recipt.member.presentation.toDocument
 import com.recipt.member.presentation.tokenHeader
@@ -149,11 +150,12 @@ internal class MemberRouterTest {
             password = "password1234!"
         )
 
-        val response = TokenResponse(
-            token = "token"
+        val response = TokenResult(
+            accessToken = "accesstoken",
+            refreshToken = "refreshToken"
         )
 
-        coEvery { authenticationService.getToken(any<TokenCreateCommand>()) } returns response.token
+        coEvery { authenticationService.getToken(any<TokenCreateCommand>()) } returns response
 
         webTestClient.post()
             .uri("/members/token")
@@ -165,6 +167,35 @@ internal class MemberRouterTest {
             .expectBody().consumeWith(
                 document(
                     "issue-token",
+                    requestFields(*request.toDocument()),
+                    responseFields(*response.toDocument())
+                )
+            )
+    }
+
+    @Test
+    fun `토큰 재발급`() {
+        val request = RefreshTokenRequest(
+            "refreshToken"
+        )
+
+        val response = TokenResult(
+            accessToken = "accesstoken",
+            refreshToken = "refreshToken"
+        )
+
+        coEvery { authenticationService.refreshToken(request.refreshToken) } returns response
+
+        webTestClient.post()
+            .uri("/members/token/refresh")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(request)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().consumeWith(
+                document(
+                    "issue-refresh-token",
                     requestFields(*request.toDocument()),
                     responseFields(*response.toDocument())
                 )

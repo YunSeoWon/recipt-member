@@ -22,6 +22,7 @@ class MemberRouter (
 
                     "/token".nest {
                         POST("", memberHandler::getToken)
+                        POST("refresh", memberHandler::refreshToken)
                     }
 
                     "/profiles".nest {

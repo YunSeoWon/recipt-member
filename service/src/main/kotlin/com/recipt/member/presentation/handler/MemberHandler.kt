@@ -4,12 +4,13 @@ import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
 import com.recipt.core.exception.request.RequestBodyExtractFailedException
+import com.recipt.member.presentation.awaitBodyOrThrow
 import com.recipt.member.presentation.memberInfoOrThrow
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
+import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.model.response.CheckingResponse
-import com.recipt.member.presentation.model.response.TokenResponse
 import com.recipt.member.presentation.pathVariableToPositiveIntOrThrow
 import com.recipt.member.presentation.queryParamToPositiveIntOrThrow
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -54,11 +55,11 @@ class MemberHandler (
 
     suspend fun modifyMyProfile(request: ServerRequest): ServerResponse {
         val memberInfo = request.memberInfoOrThrow()
-        val modifyRequest = request.awaitBodyOrNull<ProfileModifyRequest>()
-            ?.also {
+        val modifyRequest = request.awaitBodyOrThrow<ProfileModifyRequest>()
+            .also {
                 validator.validate(it)
                 it.validate()
-            }?: throw RequestBodyExtractFailedException()
+            }
 
         memberCommandService.modify(memberInfo.no, modifyRequest.toCommand())
 
@@ -66,9 +67,8 @@ class MemberHandler (
     }
 
     suspend fun signUp(request: ServerRequest): ServerResponse {
-        val signUpRequest = request.awaitBodyOrNull<SignUpRequest>()
-            ?.also { validator.validate(it) }
-            ?: throw RequestBodyExtractFailedException()
+        val signUpRequest = request.awaitBodyOrThrow<SignUpRequest>()
+            .also { validator.validate(it) }
 
         memberCommandService.signUp(signUpRequest.toCommand(passwordEncoder))
 
@@ -76,12 +76,20 @@ class MemberHandler (
     }
 
     suspend fun getToken(request: ServerRequest): ServerResponse {
-        val logInRequest = request.awaitBodyOrNull<LogInRequest>()
-            ?.also { validator.validate(it) }
-            ?: throw RequestBodyExtractFailedException()
+        val logInRequest = request.awaitBodyOrThrow<LogInRequest>()
+            .also { validator.validate(it) }
 
         return authenticationService.getToken(logInRequest.toCommand()).let {
-            ok().bodyValueAndAwait(TokenResponse(it))
+            ok().bodyValueAndAwait(it)
+        }
+    }
+
+    suspend fun refreshToken(request: ServerRequest): ServerResponse {
+        val refreshTokenRequest = request.awaitBodyOrThrow<RefreshTokenRequest>()
+            .also { it.validate() }
+
+        return authenticationService.refreshToken(refreshTokenRequest.refreshToken).let {
+            ok().bodyValueAndAwait(it)
         }
     }
 
