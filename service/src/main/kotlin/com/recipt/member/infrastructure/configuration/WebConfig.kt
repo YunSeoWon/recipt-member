@@ -9,7 +9,10 @@ import org.springframework.web.reactive.config.WebFluxConfigurer
 class WebConfig : WebFluxConfigurer {
     override fun addCorsMappings(registry: CorsRegistry) {
         registry.addMapping("/**")
-            .allowedOrigins("http://localhost:8080")
+            .allowedOrigins(
+                "http://localhost:8080",
+                "http://127.0.0.1:8080"
+            )
             .allowedMethods("PUT", "DELETE", "POST", "GET")
             .allowCredentials(true).maxAge(3600)
     }

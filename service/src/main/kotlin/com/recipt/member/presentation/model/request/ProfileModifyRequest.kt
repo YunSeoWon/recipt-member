@@ -7,19 +7,22 @@ import com.recipt.core.exception.request.InvalidParameterException
 import javax.validation.constraints.Pattern
 
 data class ProfileModifyRequest (
-    @Pattern(regexp = ValidationPatterns.PASSWORD)
-    val password: String,
-    val nickname: String?,
-    val mobileNo: String?,
-    val introduction: String?,
-    val profileImageUrl: String?,
-    val newPassword: String?
+    val password: String? = null,
+    val nickname: String? = null,
+    val mobileNo: String? = null,
+    val introduction: String? = null,
+    val profileImageUrl: String? = null,
+    val newPassword: String? = null
 ) {
     /** nullable한 것은 따로 검사.. **/
     fun validate() {
         mobileNo?.let {
             if(!checkPatternMatch(ValidationPatterns.PHONE, it))
                 throw InvalidParameterException("mobileNo")
+        }
+        password?.let {
+            if(!checkPatternMatch(ValidationPatterns.PASSWORD, it))
+                throw InvalidParameterException("newPassword")
         }
         newPassword?.let {
             if(!checkPatternMatch(ValidationPatterns.PASSWORD, it))

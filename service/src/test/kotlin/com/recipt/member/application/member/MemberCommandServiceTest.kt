@@ -19,6 +19,8 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.transaction.support.TransactionCallback
+import org.springframework.transaction.support.TransactionTemplate
 
 @ExtendWith(MockKExtension::class)
 internal class MemberCommandServiceTest {
@@ -31,6 +33,9 @@ internal class MemberCommandServiceTest {
     @MockK
     private lateinit var passwordEncoder: PasswordEncoder
 
+    @MockK
+    private lateinit var transactionTemplate: TransactionTemplate
+
     private lateinit var memberCommandService: MemberCommandService
 
     private val testPassword = "password"
@@ -41,7 +46,8 @@ internal class MemberCommandServiceTest {
         memberCommandService = MemberCommandService(
             memberRepository = memberRepository,
             followerMappingRepository = followerMappingRepository,
-            passwordEncoder = passwordEncoder
+            passwordEncoder = passwordEncoder,
+            transactionTemplate = transactionTemplate
         )
 
         /** 귀찮으니까 패스워드 인코더 모킹 여기서.. **/
@@ -49,6 +55,10 @@ internal class MemberCommandServiceTest {
         every { passwordEncoder.matches(not(testPassword), testPassword) } returns false
         every { passwordEncoder.encode(testPassword) } returns testPassword
         every { passwordEncoder.encode(newTestPassword) } returns newTestPassword
+
+        every { transactionTemplate.execute(any<TransactionCallback<*>>()) } answers {
+            firstArg<TransactionCallback<*>>().doInTransaction(mockk())
+        }
     }
 
     @Test
@@ -139,6 +149,7 @@ internal class MemberCommandServiceTest {
 
         every { memberRepository.findByIdOrNull(memberNo) } returns member
         every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
+        every { memberRepository.save(any()) } returns mockk()
 
         assertDoesNotThrow {
             memberCommandService.modify(memberNo, command)
@@ -146,6 +157,7 @@ internal class MemberCommandServiceTest {
 
         verify(exactly = 1) {
             member.modify(any(), any())
+            memberRepository.save(any())
         }
     }
 

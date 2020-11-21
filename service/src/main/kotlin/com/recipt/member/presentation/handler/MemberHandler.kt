@@ -13,6 +13,7 @@ import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.model.response.CheckingResponse
 import com.recipt.member.presentation.pathVariableToPositiveIntOrThrow
 import com.recipt.member.presentation.queryParamToPositiveIntOrThrow
+import org.slf4j.LoggerFactory
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
@@ -28,7 +29,6 @@ class MemberHandler (
     private val passwordEncoder: PasswordEncoder,
     private val authenticationService: AuthenticationService
 ) {
-
     companion object {
         private val REDIRECTION_URL = URI("https://www.naver.com")  // TODO: Front가 만들어지면 새로 넣기
     }

@@ -4,6 +4,7 @@ import com.recipt.member.application.member.dto.ProfileModifyCommand
 import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.domain.converter.MemberStatusConverter
 import com.recipt.core.enums.member.MemberStatus
+import org.slf4j.LoggerFactory
 import javax.persistence.*
 
 @Table(name = "RECIPT_MEMBER")

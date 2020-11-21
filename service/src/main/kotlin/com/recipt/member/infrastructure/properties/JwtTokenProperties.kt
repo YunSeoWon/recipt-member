@@ -13,13 +13,13 @@ data class JwtTokenProperties(
 )
 
 data class TokenProperties(
-    private val validateTime: Int,
+    val validateTime: Long,
     private val key: String,
     private val algorithm: String
 ) {
-    fun getValidateTimeMili(): Long = validateTime * 1000L
+    fun getValidateTimeMili(): Long = validateTime * 1000
 
-    fun getValidateDayMili(): Long = validateTime * 1000L * 86400L
+    fun getValidateDayMili(): Long = validateTime * 1000 * 86400
 
     fun getSecretKey(): String = Base64.getEncoder().encodeToString(key.toByteArray())
 

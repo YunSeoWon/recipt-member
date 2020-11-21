@@ -17,6 +17,8 @@ import io.jsonwebtoken.Jwts
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
+import java.time.Duration
+import java.time.temporal.TemporalUnit
 import java.util.*
 
 /**
@@ -42,6 +44,10 @@ class JwtTokenProvider (
         val createDate = Date()
         val accessTokenExpirationDate = Date(createDate.time + jwtTokenProperties.access.getValidateTimeMili())
         val refreshTokenExpirationDate = Date(createDate.time + jwtTokenProperties.refresh.getValidateDayMili())
+
+        logger.info("accessTokenExpiration: ${accessTokenExpirationDate}")
+        logger.info("refreshTokenExpirationDate: ${refreshTokenExpirationDate}")
+
         val memberInfoJson = objectMapper.writeValueAsString(memberInfo)
 
         val claims = mutableMapOf(
@@ -74,7 +80,11 @@ class JwtTokenProvider (
                 .compact()
         ).also {
             stringRedisTemplate.opsForValue()
-                .set(RedisKeyEnum.REFRESH_TOKEN.getKey(it.refreshToken), memberInfoJson)
+                .set(
+                    RedisKeyEnum.REFRESH_TOKEN.getKey(it.refreshToken),
+                    memberInfoJson,
+                    Duration.ofDays(jwtTokenProperties.refresh.validateTime)
+                )
         }
     }
 

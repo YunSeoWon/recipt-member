@@ -1,7 +1,7 @@
 package com.recipt.member.application.member.dto
 
 data class ProfileModifyCommand(
-    val password: String,
+    val password: String?,
     val nickname: String?,
     val mobileNo: String?,
     val introduction: String?,

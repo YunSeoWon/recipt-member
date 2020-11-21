@@ -13,49 +13,59 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
+import org.springframework.transaction.support.TransactionTemplate
 
 @Component
 class MemberCommandService(
     private val memberRepository: MemberRepository,
     private val followerMappingRepository: FollowerMappingRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val transactionTemplate: TransactionTemplate
 ) {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-
     fun signUp(command: SignUpCommand) {
-        logger.info("SIGN UP: command: $command")
-        memberRepository.findByEmailOrNickname(command.email, command.nickname)?.let {
-            if (it.email == command.email) throw DuplicatedMemberException("email")
-            if (it.nickname == command.nickname) throw DuplicatedMemberException("nickname")
-        }
+        transactionTemplate.execute {
+            memberRepository.findByEmailOrNickname(command.email, command.nickname)?.let {
+                if (it.email == command.email) throw DuplicatedMemberException("email")
+                if (it.nickname == command.nickname) throw DuplicatedMemberException("nickname")
+            }
 
-        Member.create(command).let {
-            memberRepository.save(it)
+            Member.create(command).let {
+                memberRepository.save(it)
+            }
         }
     }
 
     fun modify(memberNo: Int, command: ProfileModifyCommand) {
-        memberRepository.findByIdOrNull(memberNo)?.let {
-            if (!passwordEncoder.matches(command.password, it.password))
-                throw WrongPasswordException()
+        transactionTemplate.execute {
+            memberRepository.findByIdOrNull(memberNo)?.let { member ->
+                command.newPassword?.let {
+                    if (!passwordEncoder.matches(command.password, member.password))
+                        throw WrongPasswordException()
+                }
 
-            it.modify(command, command.newPassword?.let { passwordEncoder.encode(it) })
-        }?: throw MemberNotFoundException()
+                member.modify(command, command.newPassword?.let { passwordEncoder.encode(it) })
+                memberRepository.save(member)
+
+            } ?: throw MemberNotFoundException()
+        }
     }
 
     fun follow(from: Int, to: Int) {
-        if (!memberRepository.existsById(to)) throw MemberNotFoundException()
-        if (memberRepository.existFollowing(from, to)) return
-
-        followerMappingRepository.save(FollowerMapping(memberNo = from, followerNo = to))
+        transactionTemplate.execute {
+            if (!memberRepository.existsById(to)) throw MemberNotFoundException()
+            if (!memberRepository.existFollowing(from, to))
+                followerMappingRepository.save(FollowerMapping(memberNo = from, followerNo = to))
+        }
     }
 
     fun unfollow(from: Int, to: Int) {
         if (!memberRepository.existsById(to)) throw MemberNotFoundException()
 
-        followerMappingRepository.findByMemberNoAndFollowerNo(from, to)?.let {
-            followerMappingRepository.deleteById(it.no)
+        transactionTemplate.execute {
+            followerMappingRepository.findByMemberNoAndFollowerNo(from, to)?.let {
+                followerMappingRepository.deleteById(it.no)
+            }
         }
     }
 }
