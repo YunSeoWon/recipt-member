@@ -1,20 +1,21 @@
 package com.recipt.member.application.authentication
 
+import com.recipt.core.exception.member.WrongEmailOrPasswordException
 import com.recipt.member.application.authentication.dto.TokenCreateCommand
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.MemberRepository
 import com.recipt.member.infrastructure.security.JwtTokenProvider
-import com.recipt.core.exception.member.WrongEmailOrPasswordException
-import com.recipt.member.application.authentication.dto.TokenResult
-import io.mockk.*
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import org.junit.jupiter.api.Assertions.*
+import io.mockk.mockk
+import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.security.crypto.password.PasswordEncoder
 
 @ExtendWith(MockKExtension::class)
@@ -44,8 +45,8 @@ internal class AuthenticationServiceTest {
             every { password } returns rightPassword
         }
 
-        every { memberRepository.findByEmail(email) } returns member
-        every { memberRepository.findByEmail(not(email)) } returns null
+        every { memberRepository.findFirstByEmail(email) } returns member
+        every { memberRepository.findFirstByEmail(not(email)) } returns null
 
         every { passwordEncoder.matches(rightPassword, rightPassword) } returns true
         every { passwordEncoder.matches(not(rightPassword), rightPassword) } returns false
@@ -66,7 +67,7 @@ internal class AuthenticationServiceTest {
         assertDoesNotThrow { authenticationService.getToken(rightCommand) }
 
         verify(exactly = 1) {
-            memberRepository.findByEmail(email)
+            memberRepository.findFirstByEmail(email)
             passwordEncoder.matches(rightPassword, rightPassword)
             jwtTokenProvider.generateToken(any<Member>())
         }
@@ -84,7 +85,7 @@ internal class AuthenticationServiceTest {
         }
 
         verify(exactly = 1) {
-            memberRepository.findByEmail(notExistedEmail)
+            memberRepository.findFirstByEmail(notExistedEmail)
         }
 
         verify(exactly = 0) {
@@ -105,7 +106,7 @@ internal class AuthenticationServiceTest {
         }
 
         verify(exactly = 1) {
-            memberRepository.findByEmail(email)
+            memberRepository.findFirstByEmail(email)
             passwordEncoder.matches(not(rightPassword), rightPassword)
         }
 

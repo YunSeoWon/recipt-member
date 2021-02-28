@@ -1,28 +1,33 @@
 package com.recipt.member.presentation.handler
 
+import com.recipt.core.exception.authentication.RefreshTokenNotFoundException
+import com.recipt.core.http.ReciptCookies
 import com.recipt.member.application.authentication.AuthenticationService
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
-import com.recipt.core.exception.request.RequestBodyExtractFailedException
 import com.recipt.member.presentation.awaitBodyOrThrow
 import com.recipt.member.presentation.memberInfoOrThrow
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
-import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.model.response.CheckingResponse
 import com.recipt.member.presentation.pathVariableToPositiveIntOrThrow
 import com.recipt.member.presentation.queryParamToPositiveIntOrThrow
-import org.slf4j.LoggerFactory
+import org.springframework.http.ResponseCookie
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.server.*
+import org.springframework.web.reactive.function.server.ServerRequest
+import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.ServerResponse.*
+import org.springframework.web.reactive.function.server.bodyValueAndAwait
+import org.springframework.web.reactive.function.server.buildAndAwait
 import java.net.URI
+import java.time.Duration
 import javax.validation.Validator
 
 @Component
-class MemberHandler (
+class MemberHandler(
     private val memberQueryService: MemberQueryService,
     private val memberCommandService: MemberCommandService,
     private val validator: Validator,
@@ -79,18 +84,15 @@ class MemberHandler (
         val logInRequest = request.awaitBodyOrThrow<LogInRequest>()
             .also { validator.validate(it) }
 
-        return authenticationService.getToken(logInRequest.toCommand()).let {
-            ok().bodyValueAndAwait(it)
-        }
+        return setToken(authenticationService.getToken(logInRequest.toCommand()))
     }
 
     suspend fun refreshToken(request: ServerRequest): ServerResponse {
-        val refreshTokenRequest = request.awaitBodyOrThrow<RefreshTokenRequest>()
-            .also { it.validate() }
+        val refreshToken = request.cookies().getFirst(ReciptCookies.REFRESH_TOKEN)
+            ?.value
+            ?: throw RefreshTokenNotFoundException()
 
-        return authenticationService.refreshToken(refreshTokenRequest.refreshToken).let {
-            ok().bodyValueAndAwait(it)
-        }
+        return setToken(authenticationService.refreshToken(refreshToken))
     }
 
     suspend fun checkFollowing(request: ServerRequest): ServerResponse {
@@ -116,5 +118,24 @@ class MemberHandler (
 
         memberCommandService.unfollow(from = memberInfo.no, to = memberNo)
         return noContent().buildAndAwait()
+    }
+
+    private suspend fun setToken(token: TokenResult): ServerResponse {
+        val accessTokenCookie = ResponseCookie.from("accessToken", token.accessToken)
+            .domain("localhost")
+            .maxAge(Duration.ofMinutes(30L))
+            .httpOnly(true)
+            .build()
+
+        val refreshTokenCookie = ResponseCookie.from("refreshToken", token.refreshToken)
+            .domain("localhost")
+            .maxAge(Duration.ofDays(7))
+            .httpOnly(true)
+            .build()
+
+        return noContent().cookies {
+            it.add(ReciptCookies.ACCESS_TOKEN, accessTokenCookie)
+            it.add(ReciptCookies.REFRESH_TOKEN, refreshTokenCookie)
+        }.buildAndAwait()
     }
 }

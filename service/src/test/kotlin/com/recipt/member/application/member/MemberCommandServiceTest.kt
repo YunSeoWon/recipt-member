@@ -1,14 +1,14 @@
 package com.recipt.member.application.member
 
+import com.recipt.core.exception.member.DuplicatedMemberException
+import com.recipt.core.exception.member.MemberNotFoundException
+import com.recipt.core.exception.member.WrongPasswordException
 import com.recipt.member.application.member.dto.ProfileModifyCommand
 import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.domain.member.entity.FollowerMapping
 import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.FollowerMappingRepository
 import com.recipt.member.domain.member.repository.MemberRepository
-import com.recipt.core.exception.member.DuplicatedMemberException
-import com.recipt.core.exception.member.MemberNotFoundException
-import com.recipt.core.exception.member.WrongPasswordException
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.transaction.support.TransactionCallback
 import org.springframework.transaction.support.TransactionTemplate
@@ -70,13 +69,13 @@ internal class MemberCommandServiceTest {
             mobileNo = "010-1234-5678"
         )
 
-        every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns null
+        every { memberRepository.findFirstByEmailOrNickname(command.email, command.nickname) } returns null
         every { memberRepository.save(any<Member>()) } returns mockk()
 
         memberCommandService.signUp(command)
 
         verify(exactly = 1) {
-            memberRepository.findByEmailOrNickname(command.email, command.nickname)
+            memberRepository.findFirstByEmailOrNickname(command.email, command.nickname)
             memberRepository.save(any<Member>())
         }
     }
@@ -94,13 +93,13 @@ internal class MemberCommandServiceTest {
             every { email } returns command.email
         }
 
-        every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns existedMember
+        every { memberRepository.findFirstByEmailOrNickname(command.email, command.nickname) } returns existedMember
         every { memberRepository.save(any<Member>()) } returns mockk()
 
         assertThrows<DuplicatedMemberException> { memberCommandService.signUp(command) }
 
         verify(exactly = 1) {
-            memberRepository.findByEmailOrNickname(command.email, command.nickname)
+            memberRepository.findFirstByEmailOrNickname(command.email, command.nickname)
         }
         verify(exactly = 0) {
             memberRepository.save(any<Member>())
@@ -121,13 +120,13 @@ internal class MemberCommandServiceTest {
             every { nickname } returns command.nickname
         }
 
-        every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns existedMember
+        every { memberRepository.findFirstByEmailOrNickname(command.email, command.nickname) } returns existedMember
         every { memberRepository.save(any<Member>()) } returns mockk()
 
         assertThrows<DuplicatedMemberException> { memberCommandService.signUp(command) }
 
         verify(exactly = 1) {
-            memberRepository.findByEmailOrNickname(command.email, command.nickname)
+            memberRepository.findFirstByEmailOrNickname(command.email, command.nickname)
         }
         verify(exactly = 0) {
             memberRepository.save(any<Member>())
@@ -149,7 +148,7 @@ internal class MemberCommandServiceTest {
 
         every { memberRepository.findByIdOrNull(memberNo) } returns member
         every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
-        every { memberRepository.save(any()) } returns mockk()
+        every { memberRepository.save(any<Member>()) } returns mockk()
 
         assertDoesNotThrow {
             memberCommandService.modify(memberNo, command)
@@ -157,7 +156,7 @@ internal class MemberCommandServiceTest {
 
         verify(exactly = 1) {
             member.modify(any(), any())
-            memberRepository.save(any())
+            memberRepository.save(any<Member>())
         }
     }
 

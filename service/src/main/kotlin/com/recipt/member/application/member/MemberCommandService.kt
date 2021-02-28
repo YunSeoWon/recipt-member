@@ -1,19 +1,18 @@
 package com.recipt.member.application.member
 
+import com.recipt.core.exception.member.DuplicatedMemberException
+import com.recipt.core.exception.member.MemberNotFoundException
+import com.recipt.core.exception.member.WrongPasswordException
 import com.recipt.member.application.member.dto.ProfileModifyCommand
 import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.domain.member.entity.FollowerMapping
 import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.FollowerMappingRepository
 import com.recipt.member.domain.member.repository.MemberRepository
-import com.recipt.core.exception.member.DuplicatedMemberException
-import com.recipt.core.exception.member.MemberNotFoundException
-import com.recipt.core.exception.member.WrongPasswordException
-import org.slf4j.LoggerFactory
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionTemplate
+import reactor.core.publisher.Mono
 
 @Component
 class MemberCommandService(
@@ -23,40 +22,47 @@ class MemberCommandService(
     private val transactionTemplate: TransactionTemplate
 ) {
 
-    fun signUp(command: SignUpCommand) {
-        transactionTemplate.execute {
-            memberRepository.findByEmailOrNickname(command.email, command.nickname)?.let {
-                if (it.email == command.email) throw DuplicatedMemberException("email")
-                if (it.nickname == command.nickname) throw DuplicatedMemberException("nickname")
-            }
-
-            Member.create(command).let {
-                memberRepository.save(it)
-            }
-        }
+    // Transaction은?
+    fun signUp(command: SignUpCommand): Mono<Unit> {
+        return memberRepository.findFirstByEmailOrNickname(command.email, command.nickname)
+            .switchIfEmpty(Mono.error(MemberNotFoundException()))
+            .handle<Member> { member, sink ->
+                when {
+                    member.email == command.email -> sink.error(DuplicatedMemberException("email"))
+                    member.nickname == command.nickname -> sink.error(DuplicatedMemberException("nickname"))
+                    else -> sink.next(Member.create(command))
+                }
+            }.flatMap { memberRepository.save(it) }
+            .then(Mono.just(Unit))
     }
 
-    fun modify(memberNo: Int, command: ProfileModifyCommand) {
-        transactionTemplate.execute {
-            memberRepository.findByIdOrNull(memberNo)?.let { member ->
+    fun modify(memberNo: Int, command: ProfileModifyCommand): Mono<Unit> {
+        return memberRepository.findById(memberNo)
+            .switchIfEmpty(Mono.error(MemberNotFoundException()))
+            .handle<Member> { member, sink ->
                 command.newPassword?.let {
                     if (!passwordEncoder.matches(command.password, member.password))
-                        throw WrongPasswordException()
+                        sink.error(WrongPasswordException())
                 }
-
-                member.modify(command, command.newPassword?.let { passwordEncoder.encode(it) })
-                memberRepository.save(member)
-
-            } ?: throw MemberNotFoundException()
-        }
+                sink.next(member)
+            }.flatMap {
+                it.modify(command, command.newPassword?.let { passwordEncoder.encode(it) })
+                memberRepository.save(it)
+            }
+            .then(Mono.just(Unit))
     }
 
-    fun follow(from: Int, to: Int) {
+    fun follow(from: Int, to: Int): Mono<Unit> {
         transactionTemplate.execute {
             if (!memberRepository.existsById(to)) throw MemberNotFoundException()
             if (!memberRepository.existFollowing(from, to))
                 followerMappingRepository.save(FollowerMapping(memberNo = from, followerNo = to))
         }
+
+        memberRepository.existsById(to)
+            .filter { it }
+            .switchIfEmpty(Mono.error(MemberNotFoundException()))
+            .flatMap { memberRepository.existsF }
     }
 
     fun unfollow(from: Int, to: Int) {

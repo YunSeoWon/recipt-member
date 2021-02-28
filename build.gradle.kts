@@ -1,5 +1,5 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
@@ -94,14 +94,20 @@ subprojects {
             implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
             implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
 
-            // jpa & querydsl
+            // jpa & querydsl & r2dbc
+            runtimeOnly("mysql:mysql-connector-java")
+
             implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
+            implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+            runtimeOnly("dev.miku:r2dbc-mysql:0.8.2.RELEASE")
+
             kapt("org.springframework.boot:spring-boot-configuration-processor")
             implementation("com.querydsl:querydsl-jpa:${queryDslversion}")
             kapt("com.querydsl:querydsl-apt:${queryDslversion}:jpa")
 
             developmentOnly("org.springframework.boot:spring-boot-devtools")
-            runtimeOnly("mysql:mysql-connector-java")
+
 
             // test
             testImplementation("org.springframework.boot:spring-boot-starter-test") {
@@ -110,6 +116,7 @@ subprojects {
             asciidoctor("org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.3.RELEASE")
             testImplementation("org.springframework.restdocs:spring-restdocs-webtestclient:2.0.3.RELEASE")
             testImplementation("com.ninja-squad:springmockk:1.1.0")
+            testImplementation("io.projectreactor:reactor-test")
         }
 
         tasks {

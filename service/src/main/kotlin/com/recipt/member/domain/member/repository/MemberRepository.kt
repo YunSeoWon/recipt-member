@@ -1,11 +1,12 @@
 package com.recipt.member.domain.member.repository
 
 import com.recipt.member.domain.member.entity.Member
-import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.r2dbc.repository.R2dbcRepository
 import org.springframework.stereotype.Repository
+import reactor.core.publisher.Mono
 
 @Repository
-interface MemberRepository : JpaRepository<Member, Int>, MemberAggregateRepository {
-    fun findByEmailOrNickname(email: String, nickname: String): Member?
-    fun findByEmail(email: String): Member?
+interface MemberRepository : R2dbcRepository<Member, Int>, MemberAggregateRepository {
+    fun findFirstByEmailOrNickname(email: String, nickname: String): Mono<Member>
+    fun findFirstByEmail(email: String): Mono<Member>
 }

@@ -1,26 +1,26 @@
 package com.recipt.member.presentation.router
 
 import com.ninjasquad.springmockk.MockkBean
+import com.recipt.core.http.ReciptCookies
+import com.recipt.core.model.MemberInfo
 import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.authentication.dto.TokenCreateCommand
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
-import com.recipt.member.application.member.dto.*
-import com.recipt.core.http.ReciptHeaders.AUTH_TOKEN
-import com.recipt.core.http.ReciptHeaders.TEST_AUTH_TOKEN
-import com.recipt.member.presentation.handler.MemberHandler
-import com.recipt.core.model.MemberInfo
-import com.recipt.member.application.authentication.dto.TokenResult
+import com.recipt.member.application.member.dto.FollowerProfileSummary
+import com.recipt.member.application.member.dto.MyProfile
+import com.recipt.member.application.member.dto.ProfileSummary
+import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.presentation.exception.GlobalErrorAttributes
 import com.recipt.member.presentation.exception.GlobalErrorWebExceptionHandler
+import com.recipt.member.presentation.handler.MemberHandler
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
-import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.model.response.CheckingResponse
 import com.recipt.member.presentation.supports.AccessTokenFilter
 import com.recipt.member.presentation.toDocument
-import com.recipt.member.presentation.tokenHeader
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
@@ -33,11 +33,10 @@ import org.springframework.context.ApplicationContext
 import org.springframework.http.MediaType
 import org.springframework.restdocs.RestDocumentationContextProvider
 import org.springframework.restdocs.RestDocumentationExtension
-import org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders
 import org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint
-import org.springframework.restdocs.payload.PayloadDocumentation.*
-import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
-import org.springframework.restdocs.request.RequestDocumentation.pathParameters
+import org.springframework.restdocs.payload.PayloadDocumentation.requestFields
+import org.springframework.restdocs.payload.PayloadDocumentation.responseFields
+import org.springframework.restdocs.request.RequestDocumentation.*
 import org.springframework.restdocs.webtestclient.WebTestClientRestDocumentation.document
 import org.springframework.restdocs.webtestclient.WebTestClientRestDocumentation.documentationConfiguration
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -110,7 +109,7 @@ internal class MemberRouterTest {
                 document(
                     "member-profile",
                     pathParameters(
-                       parameterWithName("memberNo").description("회원 번호")
+                        parameterWithName("memberNo").description("회원 번호")
                     ),
                     responseFields(*summary.toDocument())
                 )
@@ -163,41 +162,35 @@ internal class MemberRouterTest {
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(request)
             .exchange()
-            .expectStatus().isOk
+            .expectStatus().isNoContent
             .expectBody().consumeWith(
                 document(
                     "issue-token",
-                    requestFields(*request.toDocument()),
-                    responseFields(*response.toDocument())
+                    requestFields(*request.toDocument())
                 )
             )
     }
 
     @Test
     fun `토큰 재발급`() {
-        val request = RefreshTokenRequest(
-            "refreshToken"
-        )
 
         val response = TokenResult(
-            accessToken = "accesstoken",
-            refreshToken = "refreshToken"
+            accessToken = ReciptCookies.TEST_ACCESS_TOKEN,
+            refreshToken = ReciptCookies.TEST_REFRESH_TOKEN
         )
 
-        coEvery { authenticationService.refreshToken(request.refreshToken) } returns response
+        coEvery { authenticationService.refreshToken(ReciptCookies.TEST_REFRESH_TOKEN) } returns response
 
         webTestClient.post()
             .uri("/members/token/refresh")
+            .cookie(ReciptCookies.REFRESH_TOKEN, ReciptCookies.TEST_REFRESH_TOKEN)
             .accept(MediaType.APPLICATION_JSON)
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(request)
             .exchange()
-            .expectStatus().isOk
+            .expectStatus().isNoContent
             .expectBody().consumeWith(
                 document(
-                    "issue-refresh-token",
-                    requestFields(*request.toDocument()),
-                    responseFields(*response.toDocument())
+                    "issue-refresh-token"
                 )
             )
     }
@@ -219,13 +212,12 @@ internal class MemberRouterTest {
         webTestClient.get()
             .uri("/members/profiles/me")
             .accept(MediaType.APPLICATION_JSON)
-            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .cookie(ReciptCookies.ACCESS_TOKEN, ReciptCookies.TEST_ACCESS_TOKEN)
             .exchange()
             .expectStatus().isOk
             .expectBody().consumeWith(
                 document(
                     "get-my-profile",
-                    requestHeaders(*tokenHeader),
                     responseFields(*response.toDocument())
                 )
             )
@@ -247,14 +239,13 @@ internal class MemberRouterTest {
         webTestClient.put()
             .uri("/members/profiles/me")
             .accept(MediaType.APPLICATION_JSON)
-            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .cookie(ReciptCookies.ACCESS_TOKEN, ReciptCookies.TEST_ACCESS_TOKEN)
             .bodyValue(updateRequest)
             .exchange()
             .expectStatus().isNoContent
             .expectBody().consumeWith(
                 document(
                     "modify-my-profile",
-                    requestHeaders(*tokenHeader),
                     requestFields(*updateRequest.toDocument())
                 )
             )
@@ -274,13 +265,12 @@ internal class MemberRouterTest {
         webTestClient.get()
             .uri("/members/following")
             .accept(MediaType.APPLICATION_JSON)
-            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .cookie(ReciptCookies.ACCESS_TOKEN, ReciptCookies.TEST_ACCESS_TOKEN)
             .exchange()
             .expectStatus().isOk
             .expectBody().consumeWith(
                 document(
                     "get-follower-list",
-                    requestHeaders(*tokenHeader),
                     responseFields(*response[0].toDocument("[]"))
                 )
             )
@@ -295,13 +285,15 @@ internal class MemberRouterTest {
         webTestClient.get()
             .uri("/members/following/check?followerNo=${followerNo}")
             .accept(MediaType.APPLICATION_JSON)
-            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .cookie(ReciptCookies.ACCESS_TOKEN, ReciptCookies.TEST_ACCESS_TOKEN)
             .exchange()
             .expectStatus().isOk
             .expectBody().consumeWith(
                 document(
                     "check-follower-list",
-                    requestHeaders(*tokenHeader),
+                    requestParameters(
+                        parameterWithName("followerNo").description("팔로우할 회원 번호")
+                    ),
                     responseFields(*response.toDocument("팔로우"))
                 )
             )
@@ -316,16 +308,19 @@ internal class MemberRouterTest {
         webTestClient.post()
             .uri("/members/following?followerNo=${followerNo}")
             .accept(MediaType.APPLICATION_JSON)
-            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .cookie(ReciptCookies.ACCESS_TOKEN, ReciptCookies.TEST_ACCESS_TOKEN)
             .exchange()
             .expectStatus().isNoContent
             .expectBody().consumeWith(
                 document(
                     "follow",
-                    requestHeaders(*tokenHeader)
+                    requestParameters(
+                        parameterWithName("followerNo").description("팔로우할 회원 번호")
+                    )
                 )
             )
     }
+
     @Test
     fun `언팔로우`() {
         val followerNo = 3
@@ -335,13 +330,15 @@ internal class MemberRouterTest {
         webTestClient.delete()
             .uri("/members/following?followerNo=${followerNo}")
             .accept(MediaType.APPLICATION_JSON)
-            .header(AUTH_TOKEN, TEST_AUTH_TOKEN)
+            .cookie(ReciptCookies.ACCESS_TOKEN, ReciptCookies.TEST_ACCESS_TOKEN)
             .exchange()
             .expectStatus().isNoContent
             .expectBody().consumeWith(
                 document(
                     "unfollow",
-                    requestHeaders(*tokenHeader)
+                    requestParameters(
+                        parameterWithName("followerNo").description("언팔로우할 회원 번호")
+                    )
                 )
             )
     }

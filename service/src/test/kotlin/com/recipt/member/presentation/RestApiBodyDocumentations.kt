@@ -1,22 +1,17 @@
 package com.recipt.member.presentation
 
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.application.member.dto.FollowerProfileSummary
 import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
-import com.recipt.core.http.ReciptHeaders.AUTH_TOKEN
-import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
 import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import com.recipt.member.presentation.model.response.CheckingResponse
-import org.springframework.restdocs.headers.HeaderDocumentation.headerWithName
 import org.springframework.restdocs.payload.JsonFieldType
 import org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath
 
-val tokenHeader = arrayOf(
-    headerWithName(AUTH_TOKEN).description("회원 인증 토큰")
-)
 
 fun SignUpRequest.toDocument() = arrayOf(
     fieldWithPath("email").type(JsonFieldType.STRING)

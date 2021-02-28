@@ -1,23 +1,24 @@
 package com.recipt.member.presentation.handler
 
+import com.recipt.core.http.ReciptAttributes.MEMBER_INFO
+import com.recipt.core.http.ReciptCookies
+import com.recipt.core.model.MemberInfo
 import com.recipt.member.application.authentication.AuthenticationService
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.application.member.MemberCommandService
 import com.recipt.member.application.member.MemberQueryService
-import com.recipt.core.http.ReciptAttributes.MEMBER_INFO
-import com.recipt.core.model.MemberInfo
-import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
-import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.http.HttpCookie
 import org.springframework.http.HttpStatus
 import org.springframework.mock.web.reactive.function.server.MockServerRequest
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -106,32 +107,44 @@ internal class MemberHandlerTest {
             email = "email@email.com",
             password = "password"
         )
-        val token = TokenResult(
-            "accessToken", "refreshToken"
+        val tokenResult = TokenResult(
+            accessToken = ReciptCookies.TEST_ACCESS_TOKEN,
+            refreshToken = ReciptCookies.TEST_REFRESH_TOKEN
         )
         val request = MockServerRequest.builder()
             .body(Mono.just(logInRequest))
 
-        every { authenticationService.getToken(logInRequest.toCommand()) } returns token
+        every { authenticationService.getToken(logInRequest.toCommand()) } returns tokenResult
 
         val result = runBlocking { memberHandler.getToken(request) }
 
-        assertEquals(HttpStatus.OK, result.statusCode())
+        assertEquals(HttpStatus.NO_CONTENT, result.statusCode())
+
+        assertEquals(tokenResult.accessToken, result.cookies().getFirst(ReciptCookies.ACCESS_TOKEN)!!.value)
+        assertEquals(tokenResult.refreshToken, result.cookies().getFirst(ReciptCookies.REFRESH_TOKEN)!!.value)
     }
 
     @Test
     fun `토큰 재발급`() {
-        val refreshToken = RefreshTokenRequest("refreshToken")
-
         val request = MockServerRequest.builder()
-            .body(Mono.just(refreshToken))
+            .cookie(HttpCookie(ReciptCookies.REFRESH_TOKEN, ReciptCookies.TEST_REFRESH_TOKEN))
+            .build()
 
-        every { authenticationService.refreshToken(refreshToken.refreshToken) } returns mockk()
+        val tokenResult = TokenResult(
+            accessToken = ReciptCookies.TEST_ACCESS_TOKEN,
+            refreshToken = ReciptCookies.TEST_REFRESH_TOKEN
+        )
+
+        every { authenticationService.refreshToken(any()) } returns tokenResult
 
         val result = runBlocking { memberHandler.refreshToken(request) }
 
+        assertEquals(HttpStatus.NO_CONTENT, result.statusCode())
+        assertEquals(tokenResult.accessToken, result.cookies().getFirst(ReciptCookies.ACCESS_TOKEN)!!.value)
+        assertEquals(tokenResult.refreshToken, result.cookies().getFirst(ReciptCookies.REFRESH_TOKEN)!!.value)
+
         verify {
-            authenticationService.refreshToken(refreshToken.refreshToken)
+            authenticationService.refreshToken(any())
         }
     }
 
