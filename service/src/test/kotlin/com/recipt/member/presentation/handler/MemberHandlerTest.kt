@@ -1,20 +1,22 @@
 package com.recipt.member.presentation.handler
 
-import com.recipt.member.application.authentication.AuthenticationService
-import com.recipt.member.application.member.MemberCommandService
-import com.recipt.member.application.member.MemberQueryService
 import com.recipt.core.http.ReciptAttributes.MEMBER_INFO
 import com.recipt.core.model.MemberInfo
+import com.recipt.member.application.authentication.AuthenticationService
 import com.recipt.member.application.authentication.dto.TokenResult
+import com.recipt.member.application.member.MemberCommandService
+import com.recipt.member.application.member.MemberQueryService
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
 import com.recipt.member.presentation.model.request.RefreshTokenRequest
 import com.recipt.member.presentation.model.request.SignUpRequest
-import io.mockk.*
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -74,7 +76,7 @@ internal class MemberHandlerTest {
             .pathVariable("memberNo", "$memberNo")
             .build()
 
-        coEvery { memberQueryService.getProfile(memberNo) } returns mockk()
+        every { memberQueryService.getProfile(memberNo) } returns mockk()
 
         val result = runBlocking { memberHandler.getProfile(request) }
 
@@ -93,7 +95,7 @@ internal class MemberHandlerTest {
         val request = MockServerRequest.builder()
             .body(Mono.just(body))
 
-        every { memberCommandService.signUp(any()) } just runs
+        every { memberCommandService.signUp(any()) } returns Mono.just(Unit)
 
         val result = runBlocking { memberHandler.signUp(request) }
 
@@ -112,7 +114,7 @@ internal class MemberHandlerTest {
         val request = MockServerRequest.builder()
             .body(Mono.just(logInRequest))
 
-        every { authenticationService.getToken(logInRequest.toCommand()) } returns token
+        every { authenticationService.getToken(logInRequest.toCommand()) } returns Mono.just(token)
 
         val result = runBlocking { memberHandler.getToken(request) }
 
@@ -130,6 +132,8 @@ internal class MemberHandlerTest {
 
         val result = runBlocking { memberHandler.refreshToken(request) }
 
+        assertEquals(HttpStatus.OK, result.statusCode())
+
         verify {
             authenticationService.refreshToken(refreshToken.refreshToken)
         }
@@ -141,7 +145,7 @@ internal class MemberHandlerTest {
             .attribute(MEMBER_INFO, memberInfo)
             .build()
 
-        coEvery { memberQueryService.getMyProfile(memberInfo.no) } returns mockk()
+        every { memberQueryService.getMyProfile(memberInfo.no) } returns mockk()
 
         val result = runBlocking { memberHandler.getMyProfile(request) }
 
@@ -154,7 +158,7 @@ internal class MemberHandlerTest {
             .attribute(MEMBER_INFO, memberInfo)
             .build()
 
-        coEvery { memberQueryService.getFollowerProfiles(memberInfo.no) } returns mockk()
+        every { memberQueryService.getFollowerProfiles(memberInfo.no) } returns mockk()
 
         val result = runBlocking { memberHandler.getFollowingProfileList(request) }
 
@@ -176,7 +180,7 @@ internal class MemberHandlerTest {
             .attribute(MEMBER_INFO, memberInfo)
             .body(Mono.just(updateRequest))
 
-        coEvery { memberCommandService.modify(any(), any()) } just runs
+        every { memberCommandService.modify(any(), any()) } returns Mono.just(Unit)
 
         val result = runBlocking {
             memberHandler.modifyMyProfile(request)
@@ -193,7 +197,9 @@ internal class MemberHandlerTest {
             .queryParam("followerNo", followerNo.toString())
             .build()
 
-        coEvery { memberQueryService.checkFollowing(from = memberInfo.no, to = followerNo) } returns true
+        every {
+            memberQueryService.checkFollowing(from = memberInfo.no, to = followerNo)
+        } returns Mono.just(true)
 
         val result = runBlocking {
             memberHandler.checkFollowing(request)
@@ -210,7 +216,9 @@ internal class MemberHandlerTest {
             .queryParam("followerNo", followerNo.toString())
             .build()
 
-        coEvery { memberCommandService.follow(from = memberInfo.no, to = followerNo) } just runs
+        every {
+            memberCommandService.follow(from = memberInfo.no, to = followerNo)
+        } returns Mono.just(Unit)
 
         val result = runBlocking {
             memberHandler.follow(request)
@@ -227,7 +235,9 @@ internal class MemberHandlerTest {
             .queryParam("followerNo", followerNo.toString())
             .build()
 
-        coEvery { memberCommandService.unfollow(from = memberInfo.no, to = followerNo) } just runs
+        every {
+            memberCommandService.unfollow(from = memberInfo.no, to = followerNo)
+        } returns Mono.just(Unit)
 
         val result = runBlocking {
             memberHandler.unfollow(request)

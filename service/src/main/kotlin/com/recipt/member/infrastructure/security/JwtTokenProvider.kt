@@ -5,34 +5,33 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.recipt.core.constants.TokenClaims
 import com.recipt.core.enums.RedisKeyEnum
 import com.recipt.core.enums.authentication.TokenType
-import com.recipt.member.domain.member.entity.Member
 import com.recipt.core.enums.member.MemberRole
 import com.recipt.core.exception.authentication.RefreshTokenNotFoundException
-import com.recipt.member.infrastructure.properties.JwtTokenProperties
-import com.recipt.core.http.ReciptAttributes.MEMBER_INFO
 import com.recipt.core.model.MemberInfo
 import com.recipt.member.application.authentication.dto.TokenResult
-import io.jsonwebtoken.Claims
+import com.recipt.member.domain.member.entity.Member
+import com.recipt.member.infrastructure.properties.JwtTokenProperties
 import io.jsonwebtoken.Jwts
 import org.slf4j.LoggerFactory
-import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.switchIfEmpty
 import java.time.Duration
-import java.time.temporal.TemporalUnit
 import java.util.*
 
 /**
  * @see https://medium.com/@ard333/authentication-and-authorization-using-jwt-on-spring-webflux-29b81f813e78
  */
 @Component
-class JwtTokenProvider (
+class JwtTokenProvider(
     private val objectMapper: ObjectMapper,
     private val jwtTokenProperties: JwtTokenProperties,
-    private val stringRedisTemplate: StringRedisTemplate
+    private val reactiveStringRedisTemplate: ReactiveStringRedisTemplate
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun generateToken(member: Member): TokenResult {
+    fun generateToken(member: Member): Mono<TokenResult> {
         val memberInfo = createMemberInfo(member)
 
         logger.info("MEMBER_INFO: ${objectMapper.writeValueAsString(memberInfo)}")
@@ -40,7 +39,7 @@ class JwtTokenProvider (
     }
 
 
-    fun doGenerateToken(memberInfo: MemberInfo): TokenResult {
+    fun doGenerateToken(memberInfo: MemberInfo): Mono<TokenResult> {
         val createDate = Date()
         val accessTokenExpirationDate = Date(createDate.time + jwtTokenProperties.access.getValidateTimeMili())
         val refreshTokenExpirationDate = Date(createDate.time + jwtTokenProperties.refresh.getValidateDayMili())
@@ -66,8 +65,7 @@ class JwtTokenProvider (
             .setSubject(memberInfo.email)
             .setIssuedAt(createDate)
 
-
-        return TokenResult(
+        val token = TokenResult(
             accessToken = builder
                 .setClaims(claims)
                 .setExpiration(accessTokenExpirationDate)
@@ -78,24 +76,23 @@ class JwtTokenProvider (
                 .setExpiration(refreshTokenExpirationDate)
                 .signWith(jwtTokenProperties.refresh.getSignatureAlgorithm(), jwtTokenProperties.refresh.getSecretKey())
                 .compact()
-        ).also {
-            stringRedisTemplate.opsForValue()
-                .set(
-                    RedisKeyEnum.REFRESH_TOKEN.getKey(it.refreshToken),
-                    memberInfoJson,
-                    Duration.ofDays(jwtTokenProperties.refresh.validateTime)
-                )
-        }
+        )
+
+        return reactiveStringRedisTemplate.opsForValue()
+            .set(
+                RedisKeyEnum.REFRESH_TOKEN.getKey(token.refreshToken),
+                memberInfoJson,
+                Duration.ofDays(jwtTokenProperties.refresh.validateTime)
+            ).map { token }
     }
 
-    fun findAndDelete(refreshToken: String): MemberInfo {
-        val memberInfo = stringRedisTemplate.opsForValue()
+    fun findAndDelete(refreshToken: String): Mono<MemberInfo> {
+        return reactiveStringRedisTemplate.opsForValue()
             .get(RedisKeyEnum.REFRESH_TOKEN.getKey(refreshToken))
-            ?: throw RefreshTokenNotFoundException()
-
-        stringRedisTemplate.delete(refreshToken)
-
-        return objectMapper.readValue(memberInfo)
+            .switchIfEmpty { Mono.error(RefreshTokenNotFoundException()) }
+            .map { objectMapper.readValue<MemberInfo>(it) }
+            .zipWith(reactiveStringRedisTemplate.delete(refreshToken))
+            .map { it.t1 }
     }
 
     private fun createMemberInfo(member: Member) = MemberInfo(

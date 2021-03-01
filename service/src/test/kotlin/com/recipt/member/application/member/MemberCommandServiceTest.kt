@@ -1,26 +1,23 @@
 package com.recipt.member.application.member
 
+import com.recipt.core.exception.member.DuplicatedMemberException
+import com.recipt.core.exception.member.MemberNotFoundException
+import com.recipt.core.exception.member.WrongPasswordException
 import com.recipt.member.application.member.dto.ProfileModifyCommand
 import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.domain.member.entity.FollowerMapping
 import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.FollowerMappingRepository
 import com.recipt.member.domain.member.repository.MemberRepository
-import com.recipt.core.exception.member.DuplicatedMemberException
-import com.recipt.core.exception.member.MemberNotFoundException
-import com.recipt.core.exception.member.WrongPasswordException
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.transaction.support.TransactionCallback
-import org.springframework.transaction.support.TransactionTemplate
+import reactor.test.StepVerifier
 
 @ExtendWith(MockKExtension::class)
 internal class MemberCommandServiceTest {
@@ -33,9 +30,6 @@ internal class MemberCommandServiceTest {
     @MockK
     private lateinit var passwordEncoder: PasswordEncoder
 
-    @MockK
-    private lateinit var transactionTemplate: TransactionTemplate
-
     private lateinit var memberCommandService: MemberCommandService
 
     private val testPassword = "password"
@@ -46,8 +40,7 @@ internal class MemberCommandServiceTest {
         memberCommandService = MemberCommandService(
             memberRepository = memberRepository,
             followerMappingRepository = followerMappingRepository,
-            passwordEncoder = passwordEncoder,
-            transactionTemplate = transactionTemplate
+            passwordEncoder = passwordEncoder
         )
 
         /** 귀찮으니까 패스워드 인코더 모킹 여기서.. **/
@@ -56,9 +49,10 @@ internal class MemberCommandServiceTest {
         every { passwordEncoder.encode(testPassword) } returns testPassword
         every { passwordEncoder.encode(newTestPassword) } returns newTestPassword
 
-        every { transactionTemplate.execute(any<TransactionCallback<*>>()) } answers {
-            firstArg<TransactionCallback<*>>().doInTransaction(mockk())
-        }
+        /** 나중에 도입 필요성 느끼면 쓰게 놔둠.. **/
+//        every { transactionTemplate.execute(any<TransactionCallback<*>>()) } answers {
+//            firstArg<TransactionCallback<*>>().doInTransaction(mockk())
+//        }
     }
 
     @Test
@@ -69,15 +63,21 @@ internal class MemberCommandServiceTest {
             nickname = "nickname",
             mobileNo = "010-1234-5678"
         )
+        val created = Member.create(command)
 
         every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns null
-        every { memberRepository.save(any<Member>()) } returns mockk()
+        every { memberRepository.save(created) } returns created
 
-        memberCommandService.signUp(command)
+        val result = memberCommandService.signUp(command)
+
+        StepVerifier.create(result)
+            .expectNext(Unit)
+            .expectComplete()
+            .verify()
 
         verify(exactly = 1) {
             memberRepository.findByEmailOrNickname(command.email, command.nickname)
-            memberRepository.save(any<Member>())
+            memberRepository.save(created)
         }
     }
 
@@ -97,7 +97,12 @@ internal class MemberCommandServiceTest {
         every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns existedMember
         every { memberRepository.save(any<Member>()) } returns mockk()
 
-        assertThrows<DuplicatedMemberException> { memberCommandService.signUp(command) }
+        val result = memberCommandService.signUp(command)
+
+        StepVerifier.create(result)
+            .expectError(DuplicatedMemberException::class.java)
+            .verify()
+
 
         verify(exactly = 1) {
             memberRepository.findByEmailOrNickname(command.email, command.nickname)
@@ -124,7 +129,11 @@ internal class MemberCommandServiceTest {
         every { memberRepository.findByEmailOrNickname(command.email, command.nickname) } returns existedMember
         every { memberRepository.save(any<Member>()) } returns mockk()
 
-        assertThrows<DuplicatedMemberException> { memberCommandService.signUp(command) }
+        val result = memberCommandService.signUp(command)
+
+        StepVerifier.create(result)
+            .expectError(DuplicatedMemberException::class.java)
+            .verify()
 
         verify(exactly = 1) {
             memberRepository.findByEmailOrNickname(command.email, command.nickname)
@@ -149,15 +158,19 @@ internal class MemberCommandServiceTest {
 
         every { memberRepository.findByIdOrNull(memberNo) } returns member
         every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
-        every { memberRepository.save(any()) } returns mockk()
+        every { memberRepository.save(any<Member>()) } returns mockk()
 
-        assertDoesNotThrow {
-            memberCommandService.modify(memberNo, command)
-        }
+
+        val result = memberCommandService.modify(memberNo, command)
+
+        StepVerifier.create(result)
+            .expectNext(Unit)
+            .expectComplete()
+            .verify()
 
         verify(exactly = 1) {
             member.modify(any(), any())
-            memberRepository.save(any())
+            memberRepository.save(any<Member>())
         }
     }
 
@@ -178,9 +191,11 @@ internal class MemberCommandServiceTest {
         every { memberRepository.findByIdOrNull(memberNo) } returns member
         every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
 
-        assertThrows<MemberNotFoundException> {
-            memberCommandService.modify(notExistMemberNo, command)
-        }
+        val result = memberCommandService.modify(notExistMemberNo, command)
+
+        StepVerifier.create(result)
+            .expectError(MemberNotFoundException::class.java)
+            .verify()
 
         verify(exactly = 0) {
             member.modify(any(), any())
@@ -204,9 +219,13 @@ internal class MemberCommandServiceTest {
         every { memberRepository.findByIdOrNull(memberNo) } returns member
         every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
 
-        assertThrows<WrongPasswordException> {
-            memberCommandService.modify(memberNo, wrongPasswordCommand)
-        }
+        every { memberRepository.save(any<Member>()) } returns mockk()
+        
+        val result = memberCommandService.modify(memberNo, wrongPasswordCommand)
+
+        StepVerifier.create(result)
+            .expectError(WrongPasswordException::class.java)
+            .verify()
 
         verify(exactly = 0) {
             member.modify(any(), any())
@@ -222,9 +241,12 @@ internal class MemberCommandServiceTest {
         every { memberRepository.existFollowing(memberNo, followerNo) } returns false
         every { followerMappingRepository.save(any<FollowerMapping>()) } returns mockk()
 
-        assertDoesNotThrow {
-            memberCommandService.follow(from = memberNo, to = followerNo)
-        }
+        val result = memberCommandService.follow(from = memberNo, to = followerNo)
+
+        StepVerifier.create(result)
+            .expectNext(Unit)
+            .expectComplete()
+            .verify()
 
         verify(exactly = 1) {
             memberRepository.existsById(followerNo)
@@ -242,9 +264,11 @@ internal class MemberCommandServiceTest {
         every { memberRepository.existFollowing(memberNo, followerNo) } returns false
         every { followerMappingRepository.save(any<FollowerMapping>()) } returns mockk()
 
-        assertThrows<MemberNotFoundException> {
-            memberCommandService.follow(from = memberNo, to = followerNo)
-        }
+        val result = memberCommandService.follow(from = memberNo, to = followerNo)
+
+        StepVerifier.create(result)
+            .expectError(MemberNotFoundException::class.java)
+            .verify()
 
         verify(exactly = 1) {
             memberRepository.existsById(followerNo)
@@ -271,9 +295,11 @@ internal class MemberCommandServiceTest {
         } returns followerMapping
         every { followerMappingRepository.deleteById(any()) } just runs
 
-        assertDoesNotThrow {
-            memberCommandService.unfollow(from = memberNo, to = followerNo)
-        }
+        val result = memberCommandService.unfollow(from = memberNo, to = followerNo)
+
+        StepVerifier.create(result)
+            .expectNext(Unit)
+            .verifyComplete()
 
         verify(exactly = 1) {
             memberRepository.existsById(followerNo)
@@ -298,9 +324,11 @@ internal class MemberCommandServiceTest {
         } returns followerMapping
         every { followerMappingRepository.deleteById(any()) } just runs
 
-        assertThrows<MemberNotFoundException> {
-            memberCommandService.unfollow(from = memberNo, to = followerNo)
-        }
+        val result = memberCommandService.unfollow(from = memberNo, to = followerNo)
+
+        StepVerifier.create(result)
+            .expectError(MemberNotFoundException::class.java)
+            .verify()
 
         verify(exactly = 1) {
             memberRepository.existsById(followerNo)

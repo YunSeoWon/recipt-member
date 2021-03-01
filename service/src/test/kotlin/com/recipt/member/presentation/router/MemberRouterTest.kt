@@ -1,18 +1,21 @@
 package com.recipt.member.presentation.router
 
 import com.ninjasquad.springmockk.MockkBean
-import com.recipt.member.application.authentication.AuthenticationService
-import com.recipt.member.application.authentication.dto.TokenCreateCommand
-import com.recipt.member.application.member.MemberCommandService
-import com.recipt.member.application.member.MemberQueryService
-import com.recipt.member.application.member.dto.*
 import com.recipt.core.http.ReciptHeaders.AUTH_TOKEN
 import com.recipt.core.http.ReciptHeaders.TEST_AUTH_TOKEN
-import com.recipt.member.presentation.handler.MemberHandler
 import com.recipt.core.model.MemberInfo
+import com.recipt.member.application.authentication.AuthenticationService
+import com.recipt.member.application.authentication.dto.TokenCreateCommand
 import com.recipt.member.application.authentication.dto.TokenResult
+import com.recipt.member.application.member.MemberCommandService
+import com.recipt.member.application.member.MemberQueryService
+import com.recipt.member.application.member.dto.FollowerProfileSummary
+import com.recipt.member.application.member.dto.MyProfile
+import com.recipt.member.application.member.dto.ProfileSummary
+import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.presentation.exception.GlobalErrorAttributes
 import com.recipt.member.presentation.exception.GlobalErrorWebExceptionHandler
+import com.recipt.member.presentation.handler.MemberHandler
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
 import com.recipt.member.presentation.model.request.RefreshTokenRequest
@@ -21,10 +24,7 @@ import com.recipt.member.presentation.model.response.CheckingResponse
 import com.recipt.member.presentation.supports.AccessTokenFilter
 import com.recipt.member.presentation.toDocument
 import com.recipt.member.presentation.tokenHeader
-import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.just
-import io.mockk.runs
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -35,7 +35,8 @@ import org.springframework.restdocs.RestDocumentationContextProvider
 import org.springframework.restdocs.RestDocumentationExtension
 import org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders
 import org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint
-import org.springframework.restdocs.payload.PayloadDocumentation.*
+import org.springframework.restdocs.payload.PayloadDocumentation.requestFields
+import org.springframework.restdocs.payload.PayloadDocumentation.responseFields
 import org.springframework.restdocs.request.RequestDocumentation.parameterWithName
 import org.springframework.restdocs.request.RequestDocumentation.pathParameters
 import org.springframework.restdocs.webtestclient.WebTestClientRestDocumentation.document
@@ -43,6 +44,8 @@ import org.springframework.restdocs.webtestclient.WebTestClientRestDocumentation
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.reactive.server.WebTestClient
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import javax.validation.Validator
 
 
@@ -99,7 +102,7 @@ internal class MemberRouterTest {
             profileImageUrl = "http://image.com"
         )
 
-        coEvery { memberQueryService.getProfile(memberNo) } returns summary
+        every { memberQueryService.getProfile(memberNo) } returns Mono.just(summary)
 
         webTestClient.get()
             .uri("/members/profiles/{memberNo}", memberNo)
@@ -110,7 +113,7 @@ internal class MemberRouterTest {
                 document(
                     "member-profile",
                     pathParameters(
-                       parameterWithName("memberNo").description("회원 번호")
+                        parameterWithName("memberNo").description("회원 번호")
                     ),
                     responseFields(*summary.toDocument())
                 )
@@ -126,7 +129,9 @@ internal class MemberRouterTest {
             mobileNo = "010-1234-5678"
         )
 
-        coEvery { memberCommandService.signUp(any<SignUpCommand>()) } just runs
+        every {
+            memberCommandService.signUp(any<SignUpCommand>())
+        } returns Mono.just(Unit)
 
         webTestClient.post()
             .uri("/members")
@@ -155,7 +160,9 @@ internal class MemberRouterTest {
             refreshToken = "refreshToken"
         )
 
-        coEvery { authenticationService.getToken(any<TokenCreateCommand>()) } returns response
+        every {
+            authenticationService.getToken(any<TokenCreateCommand>())
+        } returns Mono.just(response)
 
         webTestClient.post()
             .uri("/members/token")
@@ -184,7 +191,9 @@ internal class MemberRouterTest {
             refreshToken = "refreshToken"
         )
 
-        coEvery { authenticationService.refreshToken(request.refreshToken) } returns response
+        every {
+            authenticationService.refreshToken(request.refreshToken)
+        } returns Mono.just(response)
 
         webTestClient.post()
             .uri("/members/token/refresh")
@@ -214,7 +223,9 @@ internal class MemberRouterTest {
             profileImageUrl = "http://image.com"
         )
 
-        coEvery { memberQueryService.getMyProfile(MemberInfo.TEST_MEMBER_INFO.no) } returns response
+        every {
+            memberQueryService.getMyProfile(MemberInfo.TEST_MEMBER_INFO.no)
+        } returns Mono.just(response)
 
         webTestClient.get()
             .uri("/members/profiles/me")
@@ -242,7 +253,9 @@ internal class MemberRouterTest {
             newPassword = "password1235!"
         )
 
-        every { memberCommandService.modify(MemberInfo.TEST_MEMBER_INFO.no, updateRequest.toCommand()) } just runs
+        every {
+            memberCommandService.modify(MemberInfo.TEST_MEMBER_INFO.no, updateRequest.toCommand())
+        } returns Mono.just(Unit)
 
         webTestClient.put()
             .uri("/members/profiles/me")
@@ -269,7 +282,9 @@ internal class MemberRouterTest {
             )
         )
 
-        coEvery { memberQueryService.getFollowerProfiles(MemberInfo.TEST_MEMBER_INFO.no) } returns response
+        every {
+            memberQueryService.getFollowerProfiles(MemberInfo.TEST_MEMBER_INFO.no)
+        } returns Flux.fromIterable(response)
 
         webTestClient.get()
             .uri("/members/following")
@@ -290,7 +305,10 @@ internal class MemberRouterTest {
     fun `팔로우 체크`() {
         val followerNo = 3
         val response = CheckingResponse(true)
-        coEvery { memberQueryService.checkFollowing(any(), any()) } returns response.right
+
+        every {
+            memberQueryService.checkFollowing(any(), any())
+        } returns Mono.just(response.right)
 
         webTestClient.get()
             .uri("/members/following/check?followerNo=${followerNo}")
@@ -311,7 +329,9 @@ internal class MemberRouterTest {
     fun `팔로우`() {
         val followerNo = 3
 
-        coEvery { memberCommandService.follow(any(), any()) } just runs
+        every {
+            memberCommandService.follow(any(), any())
+        } returns Mono.just(Unit)
 
         webTestClient.post()
             .uri("/members/following?followerNo=${followerNo}")
@@ -326,11 +346,14 @@ internal class MemberRouterTest {
                 )
             )
     }
+
     @Test
     fun `언팔로우`() {
         val followerNo = 3
 
-        coEvery { memberCommandService.unfollow(any(), any()) } just runs
+        every {
+            memberCommandService.unfollow(any(), any())
+        } returns Mono.just(Unit)
 
         webTestClient.delete()
             .uri("/members/following?followerNo=${followerNo}")

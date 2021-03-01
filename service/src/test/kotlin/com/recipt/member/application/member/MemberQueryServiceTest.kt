@@ -1,23 +1,20 @@
-package com.recipt.member.application
+package com.recipt.member.application.member
 
-import com.recipt.member.application.member.MemberQueryService
+import com.recipt.core.exception.member.MemberNotFoundException
 import com.recipt.member.application.member.dto.FollowerProfileSummary
 import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
 import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.MemberRepository
-import com.recipt.core.exception.member.MemberNotFoundException
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
+import reactor.test.StepVerifier
 
 @ExtendWith(MockKExtension::class)
 class MemberQueryServiceTest {
@@ -59,13 +56,11 @@ class MemberQueryServiceTest {
         every { memberRepository.findByIdOrNull(memberNo) } returns member
         every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
 
-        val result = runBlocking { memberQueryService.getProfile(memberNo) }
+        val result = memberQueryService.getProfile(memberNo)
 
-        assertThrows<MemberNotFoundException> {
-            runBlocking { memberQueryService.getProfile(notExistMemberNo) }
-        }
-
-        assertEquals(expected, result)
+        StepVerifier.create(result)
+            .expectNext(expected)
+            .verifyComplete()
     }
 
     @Test
@@ -92,13 +87,18 @@ class MemberQueryServiceTest {
         every { memberRepository.findByIdOrNull(memberNo) } returns member
         every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
 
-        val result = runBlocking { memberQueryService.getMyProfile(memberNo) }
+        val result = memberQueryService.getMyProfile(memberNo)
 
-        assertEquals(expected, result)
+        StepVerifier.create(result)
+            .expectNext(expected)
+            .verifyComplete()
 
-        assertThrows<MemberNotFoundException> {
-            runBlocking { memberQueryService.getMyProfile(memberNo + 1) }
-        }
+
+        val errorResult = memberQueryService.getMyProfile(memberNo + 1)
+
+        StepVerifier.create(errorResult)
+            .expectError(MemberNotFoundException::class.java)
+            .verify()
     }
 
     @Test
@@ -113,13 +113,17 @@ class MemberQueryServiceTest {
             }
         }
 
+        val expected = followerList.map { FollowerProfileSummary(it) }
+
         every { memberRepository.findFollowerByNo(memberNo) } returns followerList
 
-        val result = runBlocking {
-            memberQueryService.getFollowerProfiles(memberNo)
-        }
+        val result = memberQueryService.getFollowerProfiles(memberNo)
 
-        assertEquals(result, nicknames.map { FollowerProfileSummary(it, null) } )
+        StepVerifier.create(result)
+            .expectNext(expected[0])
+            .expectNext(expected[1])
+            .expectComplete()
+            .verify()
     }
 
     @Test
@@ -131,9 +135,18 @@ class MemberQueryServiceTest {
         every { memberRepository.existFollowing(from = from, to = to) } returns true
         every { memberRepository.existFollowing(from = from, to = notExisted) } returns false
 
-        runBlocking {
-            assertEquals(true, memberQueryService.checkFollowing(from, to))
-            assertEquals(false, memberQueryService.checkFollowing(from, notExisted))
+        memberQueryService.checkFollowing(from, to).let {
+            StepVerifier.create(it)
+                .expectNext(true)
+                .expectComplete()
+                .verify()
+        }
+
+        memberQueryService.checkFollowing(from, notExisted).let {
+            StepVerifier.create(it)
+                .expectNext(false)
+                .expectComplete()
+                .verify()
         }
     }
 }

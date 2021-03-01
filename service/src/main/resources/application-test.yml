@@ -5,17 +5,12 @@ spring:
   profiles: test
 
   datasource:
-    url: jdbc:mysql://localhost:3306/recipt_test?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC
-    username: reciptuser
-    password: recipereceipt
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:db;DB_CLOSE_DELAY=-1
+    username: sa
+    password: sa
 
   jpa:
-    show-sql: true
-    generate-ddl: false
-    database: mysql
-    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     hibernate:
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+      ddl-auto: create
 

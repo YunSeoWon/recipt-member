@@ -1,21 +1,23 @@
 package com.recipt.member.application.authentication
 
+import com.recipt.core.exception.member.MemberNotFoundException
+import com.recipt.core.exception.member.WrongEmailOrPasswordException
 import com.recipt.member.application.authentication.dto.TokenCreateCommand
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.domain.member.entity.Member
 import com.recipt.member.domain.member.repository.MemberRepository
 import com.recipt.member.infrastructure.security.JwtTokenProvider
-import com.recipt.core.exception.member.WrongEmailOrPasswordException
-import com.recipt.member.application.authentication.dto.TokenResult
-import io.mockk.*
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import org.junit.jupiter.api.Assertions.*
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.security.crypto.password.PasswordEncoder
+import reactor.core.publisher.Mono
+import reactor.test.StepVerifier
 
 @ExtendWith(MockKExtension::class)
 internal class AuthenticationServiceTest {
@@ -35,6 +37,7 @@ internal class AuthenticationServiceTest {
     private val wrongPassword = "${rightPassword}1"
     private val email = "email@email.com"
     private val notExistedEmail = "a$email"
+    private val token = TokenResult("accessToken", "refreshToken")
 
     @BeforeEach
     fun setUp() {
@@ -50,9 +53,7 @@ internal class AuthenticationServiceTest {
         every { passwordEncoder.matches(rightPassword, rightPassword) } returns true
         every { passwordEncoder.matches(not(rightPassword), rightPassword) } returns false
 
-        every { jwtTokenProvider.generateToken(any<Member>()) } returns TokenResult(
-            "accessToken", "refreshToken"
-        )
+        every { jwtTokenProvider.generateToken(any<Member>()) } returns Mono.just(token)
     }
 
     @Test
@@ -63,7 +64,12 @@ internal class AuthenticationServiceTest {
             password = rightPassword
         )
 
-        assertDoesNotThrow { authenticationService.getToken(rightCommand) }
+        val result = authenticationService.getToken(rightCommand)
+
+        StepVerifier.create(result)
+            .expectNext(token)
+            .expectComplete()
+            .verify()
 
         verify(exactly = 1) {
             memberRepository.findByEmail(email)
@@ -79,9 +85,11 @@ internal class AuthenticationServiceTest {
             password = rightPassword
         )
 
-        assertThrows<WrongEmailOrPasswordException> {
-            authenticationService.getToken(wrongEmailCommand)
-        }
+        val result = authenticationService.getToken(wrongEmailCommand)
+
+        StepVerifier.create(result)
+            .expectError(MemberNotFoundException::class.java)
+            .verify()
 
         verify(exactly = 1) {
             memberRepository.findByEmail(notExistedEmail)
@@ -100,9 +108,11 @@ internal class AuthenticationServiceTest {
             password = wrongPassword
         )
 
-        assertThrows<WrongEmailOrPasswordException> {
-            authenticationService.getToken(wrongPasswordCommand)
-        }
+        val result = authenticationService.getToken(wrongPasswordCommand)
+
+        StepVerifier.create(result)
+            .expectError(WrongEmailOrPasswordException::class.java)
+            .verify()
 
         verify(exactly = 1) {
             memberRepository.findByEmail(email)
@@ -117,14 +127,15 @@ internal class AuthenticationServiceTest {
     @Test
     fun `토큰 재발급`() {
         val refreshToken = "refreshToken"
-        val tokenResult = TokenResult(
-            "accessToken", "refreshToken"
-        )
 
-        every { jwtTokenProvider.findAndDelete(refreshToken) } returns mockk()
-        every { jwtTokenProvider.doGenerateToken(any()) } returns tokenResult
+        every { jwtTokenProvider.findAndDelete(refreshToken) } returns Mono.just(mockk())
+        every { jwtTokenProvider.doGenerateToken(any()) } returns Mono.just(token)
 
         val result = authenticationService.refreshToken(refreshToken)
+
+        StepVerifier.create(result)
+            .expectNext(token)
+            .verifyComplete()
 
         verify {
             jwtTokenProvider.findAndDelete(refreshToken)

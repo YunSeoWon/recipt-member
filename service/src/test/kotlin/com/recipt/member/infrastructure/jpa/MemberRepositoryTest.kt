@@ -2,13 +2,13 @@ package com.recipt.member.infrastructure.jpa
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
 
 @Sql("classpath:sql/member-test.sql")
-class MemberRepositoryTest (
-    private val memberRepositoryImpl: MemberRepositoryImpl
-): ReciptJpaTest() {
+class MemberRepositoryTest(
+    @Autowired private val memberRepositoryImpl: MemberRepositoryImpl
+) : ReciptJpaTest() {
 
     /** 팔로우 관계
      * (1 -> 2),
