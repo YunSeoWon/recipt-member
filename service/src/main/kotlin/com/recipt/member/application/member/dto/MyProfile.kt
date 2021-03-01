@@ -4,6 +4,7 @@ import com.recipt.member.domain.member.entity.Member
 
 data class MyProfile(
     val email: String,
+    val name: String,
     val nickname: String,
     val introduction: String,
     val mobileNo: String,
@@ -11,8 +12,9 @@ data class MyProfile(
     val totalRecipeReadCount: Int,
     val profileImageUrl: String?
 ) {
-    constructor(member: Member): this (
+    constructor(member: Member) : this(
         email = member.email,
+        name = member.name,
         nickname = member.nickname,
         introduction = member.introduction,
         mobileNo = member.mobileNo,

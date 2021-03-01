@@ -2,7 +2,7 @@ package com.recipt.member.domain.member.entity
 
 import com.recipt.member.application.member.dto.SignUpCommand
 import io.mockk.junit5.MockKExtension
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 
@@ -15,6 +15,7 @@ internal class MemberTest {
             "email@example.com",
             "password",
             "nickname",
+            "홍길동",
             "010-1234-5678"
         )
 
@@ -23,6 +24,7 @@ internal class MemberTest {
         assertEquals(command.email, member.email)
         assertEquals(command.password, member.password)
         assertEquals(command.nickname, member.nickname)
+        assertEquals(command.name, member.name)
         assertEquals(command.mobileNo, member.mobileNo)
     }
 }

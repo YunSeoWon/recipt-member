@@ -1,10 +1,10 @@
 package com.recipt.member.presentation
 
+import com.recipt.core.http.ReciptHeaders.AUTH_TOKEN
+import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.application.member.dto.FollowerProfileSummary
 import com.recipt.member.application.member.dto.MyProfile
 import com.recipt.member.application.member.dto.ProfileSummary
-import com.recipt.core.http.ReciptHeaders.AUTH_TOKEN
-import com.recipt.member.application.authentication.dto.TokenResult
 import com.recipt.member.presentation.model.request.LogInRequest
 import com.recipt.member.presentation.model.request.ProfileModifyRequest
 import com.recipt.member.presentation.model.request.RefreshTokenRequest
@@ -21,6 +21,8 @@ val tokenHeader = arrayOf(
 fun SignUpRequest.toDocument() = arrayOf(
     fieldWithPath("email").type(JsonFieldType.STRING)
         .description("가입할 회원 이메일"),
+    fieldWithPath("name").type(JsonFieldType.STRING)
+        .description("회원 이름"),
     fieldWithPath("password").type(JsonFieldType.STRING)
         .description("가입할 회원 비밀번호, 영문, 숫자, 특수문자 포함 8자 이상 15자 이하"),
     fieldWithPath("nickname").type(JsonFieldType.STRING)
@@ -64,6 +66,8 @@ fun ProfileSummary.toDocument() = arrayOf(
 fun MyProfile.toDocument() = arrayOf(
     fieldWithPath("email").type(JsonFieldType.STRING)
         .description("이메일"),
+    fieldWithPath("name").type(JsonFieldType.STRING)
+        .description("이름"),
     fieldWithPath("nickname").type(JsonFieldType.STRING)
         .description("닉네임"),
     fieldWithPath("mobileNo").type(JsonFieldType.STRING)

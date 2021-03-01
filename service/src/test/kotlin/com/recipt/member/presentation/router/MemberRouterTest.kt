@@ -125,6 +125,7 @@ internal class MemberRouterTest {
         val request = SignUpRequest(
             email = "email@email.com",
             nickname = "홍길동",
+            name = "홍길동",
             password = "abcd1234!",
             mobileNo = "010-1234-5678"
         )
@@ -215,6 +216,7 @@ internal class MemberRouterTest {
     fun `내 프로필 조회`() {
         val response = MyProfile(
             email = "email@email.com",
+            name = "홍길동",
             nickname = "nickname",
             introduction = "intro",
             mobileNo = "010-1234-5678",

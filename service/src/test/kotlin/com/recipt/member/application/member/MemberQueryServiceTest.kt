@@ -24,6 +24,7 @@ class MemberQueryServiceTest {
     private lateinit var memberQueryService: MemberQueryService
 
     private val _email = "email@email.com"
+    private val _name = "홍길동"
     private val _nickname = "테스터"
     private val _introduction = "테스터입니다"
     private val _followerCount = 0
@@ -68,6 +69,7 @@ class MemberQueryServiceTest {
         val memberNo = 1
         val member = mockk<Member> {
             every { email } returns _email
+            every { name } returns _name
             every { nickname } returns _nickname
             every { introduction } returns _introduction
             every { followerCount } returns _followerCount
@@ -76,6 +78,7 @@ class MemberQueryServiceTest {
         }
         val expected = MyProfile(
             email = _email,
+            name = _name,
             nickname = _nickname,
             introduction = _introduction,
             mobileNo = _mobileNo,

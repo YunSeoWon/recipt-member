@@ -47,11 +47,7 @@ internal class MemberHandlerTest {
 
     companion object {
         private const val ENCODED = "E@DDF$#@T"
-        private val memberInfo = MemberInfo(
-            email = "email@email.com",
-            no = 1,
-            nickname = "nickname"
-        )
+        private val memberInfo = MemberInfo.TEST_MEMBER_INFO
     }
 
     @BeforeEach
@@ -88,6 +84,7 @@ internal class MemberHandlerTest {
         val body = SignUpRequest(
             email = "email@email.com",
             password = "password",
+            name = "홍길동",
             nickname = "nickname",
             mobileNo = "010-1121-1121"
         )

@@ -98,6 +98,8 @@ class JwtTokenProvider(
     private fun createMemberInfo(member: Member) = MemberInfo(
         email = member.email,
         no = member.no,
-        nickname = member.nickname
+        nickname = member.nickname,
+        mobileNo = member.mobileNo,
+        name = member.name
     )
 }

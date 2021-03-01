@@ -1,10 +1,9 @@
 package com.recipt.member.domain.member.entity
 
+import com.recipt.core.enums.member.MemberStatus
 import com.recipt.member.application.member.dto.ProfileModifyCommand
 import com.recipt.member.application.member.dto.SignUpCommand
 import com.recipt.member.domain.converter.MemberStatusConverter
-import com.recipt.core.enums.member.MemberStatus
-import org.slf4j.LoggerFactory
 import javax.persistence.*
 
 @Table(name = "RECIPT_MEMBER")
@@ -25,7 +24,10 @@ data class Member(
     @Convert(converter = MemberStatusConverter::class)
     val memberStatus: MemberStatus = MemberStatus.ACTIVE
 ) {
-    @Column(name = "name")
+
+    var name: String = ""
+        private set
+
     var nickname: String = ""
         private set
 
@@ -41,12 +43,13 @@ data class Member(
 
     @Column(name = "profile_image_url")
     var profileImageUrl: String? = null
-       private set
+        private set
 
     companion object {
         fun create(command: SignUpCommand) = Member(
             email = command.email
         ).apply {
+            name = command.name
             nickname = command.nickname
             password = command.password
             mobileNo = command.mobileNo

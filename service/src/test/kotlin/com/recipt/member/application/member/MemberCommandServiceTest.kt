@@ -60,6 +60,7 @@ internal class MemberCommandServiceTest {
         val command = SignUpCommand(
             email = "email@email.com",
             password = "password",
+            name = "홍길동",
             nickname = "nickname",
             mobileNo = "010-1234-5678"
         )
@@ -86,6 +87,7 @@ internal class MemberCommandServiceTest {
         val command = SignUpCommand(
             email = "email@email.com",
             password = "password",
+            name = "홍길동",
             nickname = "nickname",
             mobileNo = "010-1234-5678"
         )
@@ -117,6 +119,7 @@ internal class MemberCommandServiceTest {
         val command = SignUpCommand(
             email = "email@email.com",
             password = "password",
+            name = "홍길동",
             nickname = "nickname",
             mobileNo = "010-1234-5678"
         )
@@ -220,7 +223,7 @@ internal class MemberCommandServiceTest {
         every { memberRepository.findByIdOrNull(not(memberNo)) } returns null
 
         every { memberRepository.save(any<Member>()) } returns mockk()
-        
+
         val result = memberCommandService.modify(memberNo, wrongPasswordCommand)
 
         StepVerifier.create(result)
