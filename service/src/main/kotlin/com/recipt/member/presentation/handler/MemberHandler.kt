@@ -82,19 +82,15 @@ class MemberHandler(
     val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun getToken(request: ServerRequest): ServerResponse {
-        val cookie = request.cookies().getFirst("Set-Cookie")
-
-        logger.info("COOKIE_NAME = ${cookie?.name.orEmpty()}, COOKIE_VALUE = ${cookie?.value.orEmpty()}")
-
         val logInRequest = request.awaitBodyOrThrow<LogInRequest>()
             .also { validator.validate(it) }
 
         return authenticationService.getToken(logInRequest.toCommand()).awaitSingle()
             .let {
                 val cookie = ResponseCookie.fromClientResponse("X-Auth", it.accessToken)
-                    .maxAge(3600)
                     .httpOnly(true)
                     .secure(false)
+                    .maxAge(86400)
                     .build()
 
                 ok().header("Set-Cookie", cookie.toString())
