@@ -91,6 +91,8 @@ class MemberHandler(
                     .httpOnly(true)
                     .secure(false)
                     .maxAge(86400)
+                    .sameSite("None")
+                    .secure(true)
                     .build()
 
                 ok().header("Set-Cookie", cookie.toString())
