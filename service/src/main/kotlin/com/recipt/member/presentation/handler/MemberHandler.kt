@@ -13,13 +13,12 @@ import com.recipt.member.presentation.model.response.CheckingResponse
 import com.recipt.member.presentation.pathVariableToPositiveIntOrThrow
 import com.recipt.member.presentation.queryParamToPositiveIntOrThrow
 import kotlinx.coroutines.reactive.awaitSingle
+import org.slf4j.LoggerFactory
+import org.springframework.http.ResponseCookie
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.reactive.function.server.ServerResponse
+import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.*
-import org.springframework.web.reactive.function.server.body
-import org.springframework.web.reactive.function.server.buildAndAwait
 import java.net.URI
 import javax.validation.Validator
 
@@ -80,12 +79,28 @@ class MemberHandler(
         return created(REDIRECTION_URL).buildAndAwait()
     }
 
+    val logger = LoggerFactory.getLogger(javaClass)
+
     suspend fun getToken(request: ServerRequest): ServerResponse {
+        val cookie = request.cookies().getFirst("Set-Cookie")
+
+        logger.info("COOKIE_NAME = ${cookie?.name.orEmpty()}, COOKIE_VALUE = ${cookie?.value.orEmpty()}")
+
         val logInRequest = request.awaitBodyOrThrow<LogInRequest>()
             .also { validator.validate(it) }
 
-        return authenticationService.getToken(logInRequest.toCommand())
-            .let { ok().body(it).awaitSingle() }
+        return authenticationService.getToken(logInRequest.toCommand()).awaitSingle()
+            .let {
+                val cookie = ResponseCookie.fromClientResponse("X-Auth", it.accessToken)
+                    .maxAge(3600)
+                    //.httpOnly(true)
+                    .secure(false)
+                    .domain("localhost")
+                    .build()
+
+                ok().header("Set-Cookie", cookie.toString())
+                    .bodyValueAndAwait(it)
+            }
     }
 
     suspend fun refreshToken(request: ServerRequest): ServerResponse {
@@ -122,7 +137,7 @@ class MemberHandler(
 
         memberCommandService.unfollow(from = memberInfo.no, to = memberNo)
             .awaitSingle()
-        
+
         return noContent().buildAndAwait()
     }
 }
