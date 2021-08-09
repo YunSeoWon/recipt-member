@@ -89,10 +89,7 @@ class MemberHandler(
             .let {
                 val cookie = ResponseCookie.fromClientResponse("X-Auth", it.accessToken)
                     .httpOnly(true)
-                    .secure(false)
                     .maxAge(86400)
-                    .sameSite("None")
-                    .secure(true)
                     .build()
 
                 ok().header("Set-Cookie", cookie.toString())
